@@ -1,8 +1,6 @@
 using Property_Management_Api.Configuration;
-using Property_Management_Api.Core.Interfaces.Repositories;
-using Property_Management_Api.Core.Interfaces.Services;
-using Property_Management_Api.Infrastructure.Repositories;
-using Property_Management_Api.Infrastructure.Services;
+using Property_Management_Api.DataServices;
+using Property_Management_Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +22,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddScoped<IPropertyRepository, PropertyRepository>();
+builder.Services.AddScoped<IPropertyDataService, PropertyDataService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 
 var app = builder.Build();

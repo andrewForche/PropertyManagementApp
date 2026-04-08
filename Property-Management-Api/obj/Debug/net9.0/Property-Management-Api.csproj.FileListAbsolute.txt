@@ -31,3 +31,4 @@ C:\Users\Andrew\OneDrive - University of Southern Indiana\Documents\PropertyMana
 C:\Users\Andrew\OneDrive - University of Southern Indiana\Documents\PropertyManagementApp\PropertyManagementApp\Property-Management-Api\obj\Debug\net9.0\Property-Management-Api.pdb
 C:\Users\Andrew\OneDrive - University of Southern Indiana\Documents\PropertyManagementApp\PropertyManagementApp\Property-Management-Api\obj\Debug\net9.0\Property-Management-Api.genruntimeconfig.cache
 C:\Users\Andrew\OneDrive - University of Southern Indiana\Documents\PropertyManagementApp\PropertyManagementApp\Property-Management-Api\obj\Debug\net9.0\ref\Property-Management-Api.dll
+C:\Users\Andrew\OneDrive - University of Southern Indiana\Documents\PropertyManagementApp\PropertyManagementApp\Property-Management-Api\bin\Debug\net9.0\MySqlConnector.dll
