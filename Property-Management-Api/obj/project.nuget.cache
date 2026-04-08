@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "YPZXXBpJr9s=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Andrew\\OneDrive - University of Southern Indiana\\Documents\\PropertyManagementApp\\PropertyManagementApp\\Property-Management-Api\\Property-Management-Api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Andrew\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.12\\microsoft.aspnetcore.openapi.9.0.12.nupkg.sha512",
+    "C:\\Users\\Andrew\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
