@@ -26,8 +26,8 @@ export function AppShell() {
           <p className="eyebrow">Property Management App</p>
           <h1>Frontend foundation scaffold</h1>
           <p className="lead">
-            React pages, typed interfaces, and service connectors are in place so we
-            can wire the API and database in without reshaping the frontend.
+            The property module is now connected end-to-end, while the rest of the
+            product areas remain scaffolded and ready for implementation.
           </p>
         </div>
 
@@ -52,16 +52,16 @@ export function AppShell() {
           </div>
           <div className="hero-metrics" aria-label="Scaffold summary">
             <div>
-              <strong>7</strong>
-              <span>feature modules</span>
+              <strong>1</strong>
+              <span>live CRUD module</span>
             </div>
             <div>
-              <strong>2</strong>
-              <span>model layers</span>
+              <strong>6</strong>
+              <span>scaffolded modules</span>
             </div>
             <div>
               <strong>1</strong>
-              <span>shared service gateway</span>
+              <span>shared API client</span>
             </div>
           </div>
         </section>

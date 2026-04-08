@@ -7,34 +7,58 @@ export class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  async get<TData>(_path: string): Promise<TData> {
-    throw new Error(
-      `GET requests are not implemented yet. Configure the API at ${this.baseUrl} when the backend is ready.`,
-    )
+  async get<TData>(path: string): Promise<TData> {
+    return this.request<TData>(path, { method: 'GET' })
   }
 
   async post<TRequest, TResponse>(
-    _path: string,
-    _payload: TRequest,
+    path: string,
+    payload: TRequest,
   ): Promise<TResponse> {
-    throw new Error(
-      `POST requests are not implemented yet. Configure the API at ${this.baseUrl} when the backend is ready.`,
-    )
+    return this.request<TResponse>(path, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   }
 
   async put<TRequest, TResponse>(
-    _path: string,
-    _payload: TRequest,
+    path: string,
+    payload: TRequest,
   ): Promise<TResponse> {
-    throw new Error(
-      `PUT requests are not implemented yet. Configure the API at ${this.baseUrl} when the backend is ready.`,
-    )
+    return this.request<TResponse>(path, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
   }
 
-  async delete(_path: string): Promise<void> {
-    throw new Error(
-      `DELETE requests are not implemented yet. Configure the API at ${this.baseUrl} when the backend is ready.`,
-    )
+  async delete(path: string): Promise<void> {
+    await this.request(path, { method: 'DELETE' })
+  }
+
+  private async request<TData>(
+    path: string,
+    init: RequestInit,
+  ): Promise<TData> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init.headers,
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(
+        errorText || `Request failed with status ${response.status}.`,
+      )
+    }
+
+    if (response.status === 204) {
+      return undefined as TData
+    }
+
+    return (await response.json()) as TData
   }
 }
 

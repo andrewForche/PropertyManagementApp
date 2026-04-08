@@ -1,5 +1,7 @@
+export * from './CreatePropertyRequest'
 export * from './Invoice'
 export * from './Maintenance'
 export * from './Property'
 export * from './Rent'
 export * from './Tenant'
+export * from './UpdatePropertyRequest'
