@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import type { ComponentType, MouseEvent } from 'react'
 import { FEATURE_ROUTES } from '../shared/constants/navigation'
 import { AppEnvironmentSummary } from './config/AppEnvironmentSummary'
 import { DashboardSummaryPage } from '../features/dashboard/DashboardSummaryPage'
@@ -9,27 +11,56 @@ import { InvoicesPage } from '../features/invoices/InvoicesPage'
 import { PropertiesPage } from '../features/properties/PropertiesPage'
 import { TenantsPage } from '../features/tenants/TenantsPage'
 
-const pages = [
-  DashboardSummaryPage,
-  RentCollectionPage,
-  RentRecordsPage,
-  MaintenanceProjectsPage,
-  WorkLogsPage,
-  InvoicesPage,
-  PropertiesPage,
-  TenantsPage,
-]
+const routeComponents: Record<string, ComponentType & { displayName?: string }> = {
+  '/': DashboardSummaryPage,
+  '/rent-collection': RentCollectionPage,
+  '/rent-records': RentRecordsPage,
+  '/maintenance': MaintenanceProjectsPage,
+  '/work-logs': WorkLogsPage,
+  '/invoices': InvoicesPage,
+  '/properties': PropertiesPage,
+  '/tenants': TenantsPage,
+}
 
 export function AppShell() {
+  const [currentPath, setCurrentPath] = useState(() =>
+    normalizePath(window.location.pathname),
+  )
+
+  useEffect(() => {
+    function handlePopState() {
+      setCurrentPath(normalizePath(window.location.pathname))
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const activePath = currentPath in routeComponents ? currentPath : '/'
+  const ActivePage = routeComponents[activePath]
+  const activeRoute =
+    FEATURE_ROUTES.find((route) => route.path === activePath) ?? FEATURE_ROUTES[0]
+
+  function handleNavigate(path: string, event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault()
+
+    if (path === currentPath) {
+      return
+    }
+
+    window.history.pushState({}, '', path)
+    setCurrentPath(path)
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-block">
           <p className="eyebrow">Property Management App</p>
-          <h1>Frontend foundation scaffold</h1>
+          <h1>Operations workspace</h1>
           <p className="lead">
-            The property module is now connected end-to-end, while the rest of the
-            product areas remain scaffolded and ready for implementation.
+            Daily workflows now live in dedicated modules so the dashboard can stay
+            focused on portfolio visibility instead of acting like a debug wall.
           </p>
         </div>
 
@@ -37,7 +68,14 @@ export function AppShell() {
           <ul className="nav-list">
             {FEATURE_ROUTES.map((route) => (
               <li key={route.path}>
-                <a href={route.path}>{route.label}</a>
+                <a
+                  href={route.path}
+                  className={route.path === activePath ? 'active' : undefined}
+                  aria-current={route.path === activePath ? 'page' : undefined}
+                  onClick={(event) => handleNavigate(route.path, event)}
+                >
+                  {route.label}
+                </a>
               </li>
             ))}
           </ul>
@@ -49,31 +87,42 @@ export function AppShell() {
       <main className="content">
         <section className="hero-card">
           <div>
-            <p className="eyebrow">Scaffold Status</p>
-            <h2>Ready for API and database integration</h2>
+            <p className="eyebrow">Current Workspace</p>
+            <h2>{activeRoute.label}</h2>
+            <p className="panel-caption">{activeRoute.description}</p>
           </div>
           <div className="hero-metrics" aria-label="Scaffold summary">
             <div>
-              <strong>1</strong>
-              <span>live CRUD module</span>
-            </div>
-            <div>
-              <strong>6</strong>
-              <span>scaffolded modules</span>
+              <strong>8</strong>
+              <span>live modules</span>
             </div>
             <div>
               <strong>1</strong>
-              <span>shared API client</span>
+              <span>shared API layer</span>
+            </div>
+            <div>
+              <strong>{activePath === '/' ? 'Home' : 'Module'}</strong>
+              <span>current view</span>
             </div>
           </div>
         </section>
 
-        <section className="page-grid" aria-label="Feature scaffold preview">
-          {pages.map((PageComponent) => (
-            <PageComponent key={PageComponent.displayName} />
-          ))}
+        <section className="page-stage" aria-label={`${activeRoute.label} page`}>
+          <ActivePage />
         </section>
       </main>
     </div>
   )
+}
+
+function normalizePath(pathname: string) {
+  if (pathname === '/dashboard') {
+    return '/'
+  }
+
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1)
+  }
+
+  return pathname
 }
