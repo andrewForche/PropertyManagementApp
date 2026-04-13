@@ -24,6 +24,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IPropertyDataService, PropertyDataService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
+builder.Services.AddScoped<IRentCollectionDataService, RentCollectionDataService>();
+builder.Services.AddScoped<IRentCollectionService, RentCollectionService>();
 
 var app = builder.Build();
 

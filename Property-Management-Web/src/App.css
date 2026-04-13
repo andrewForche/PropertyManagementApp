@@ -449,6 +449,21 @@
   color: #7c3f2e;
 }
 
+.status-pill.danger {
+  background: #f7ddd8;
+  color: #7d2c22;
+}
+
+.table-subtext {
+  color: #7a6e5d;
+  font-size: 0.85rem;
+}
+
+.compact-button {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
