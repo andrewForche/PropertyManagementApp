@@ -86,24 +86,9 @@ export function AppShell() {
 
       <main className="content">
         <section className="hero-card">
-          <div>
-            <p className="eyebrow">Current Workspace</p>
+          <div className="hero-copy">
             <h2>{activeRoute.label}</h2>
             <p className="panel-caption">{activeRoute.description}</p>
-          </div>
-          <div className="hero-metrics" aria-label="Scaffold summary">
-            <div>
-              <strong>8</strong>
-              <span>live modules</span>
-            </div>
-            <div>
-              <strong>1</strong>
-              <span>shared API layer</span>
-            </div>
-            <div>
-              <strong>{activePath === '/' ? 'Home' : 'Module'}</strong>
-              <span>current view</span>
-            </div>
           </div>
         </section>
 
