@@ -33,6 +33,7 @@ export function MaintenanceProjectsPage() {
   const [projects, setProjects] = useState<MaintenanceProjectModel[]>([])
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [workLogs, setWorkLogs] = useState<WorkLogModel[]>([])
+  const [projectIdsWithLogs, setProjectIdsWithLogs] = useState<number[]>([])
   const [projectForm, setProjectForm] = useState<CreateMaintenanceProjectRequest>(emptyProjectForm)
   const [workLogForm, setWorkLogForm] = useState<CreateWorkLogRequest>(emptyWorkLogForm)
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
@@ -69,6 +70,9 @@ export function MaintenanceProjectsPage() {
       ])
       setProjects(projectData)
       setProperties(propertyData)
+      setProjectIdsWithLogs(
+        Array.from(new Set(allWorkLogs.map((workLog) => workLog.projectId))),
+      )
       setCreateWorkLogProjectId((current) => current || projectData[0]?.projectId || 0)
       if (projectData.length === 0) {
         setSelectedProjectId(null)
@@ -296,7 +300,10 @@ export function MaintenanceProjectsPage() {
           ) : null}
 
           <div className="property-card-list">
-            {projects.map((project) => (
+            {projects.map((project) => {
+              const hasLogs = projectIdsWithLogs.includes(project.projectId)
+
+              return (
               <article
                 key={project.projectId}
                 className={`property-card tenant-card ${selectedProjectId === project.projectId ? 'selected-card' : ''}`}
@@ -335,17 +342,19 @@ export function MaintenanceProjectsPage() {
                   <button
                     type="button"
                     className="secondary-button"
-                    onClick={() => void selectProject(project.projectId)}
-                  >
-                    View Logs
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-button"
                     onClick={() => handleEdit(project)}
                   >
                     Edit
                   </button>
+                  {hasLogs ? (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => void selectProject(project.projectId)}
+                    >
+                      View Logs
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="danger-button"
@@ -355,7 +364,8 @@ export function MaintenanceProjectsPage() {
                   </button>
                 </div>
               </article>
-            ))}
+              )
+            })}
           </div>
         </section>
       </div>
