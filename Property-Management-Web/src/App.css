@@ -385,6 +385,19 @@
   color: #635746;
 }
 
+.tenant-card {
+  gap: 12px;
+}
+
+.tenant-address {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.tenant-details {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .property-details {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
