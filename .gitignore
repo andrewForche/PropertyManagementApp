@@ -1,0 +1,26 @@
+# API
+Property-Management-Api/bin/
+Property-Management-Api/obj/
+Property-Management-Api/appsettings.Development.json
+
+# Web
+Property-Management-Web/node_modules/
+Property-Management-Web/dist/
+Property-Management-Web/dist-ssr/
+Property-Management-Web/.env.development
+Property-Management-Web/*.local
+
+# Shared editor files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Shared committed templates
+!Property-Management-Web/.env.example
+!Property-Management-Api/appsettings.Development.example.json
