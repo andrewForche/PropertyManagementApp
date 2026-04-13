@@ -209,11 +209,11 @@ export function MaintenanceProjectsPage() {
     <article className="page-section properties-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Maintenance</p>
           <h3>Maintenance Projects</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/maintenance-projects</code>
+          <span className="module-chip">Project Pipeline</span>
           <button
             type="button"
             className="secondary-button"

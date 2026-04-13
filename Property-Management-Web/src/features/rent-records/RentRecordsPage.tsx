@@ -45,11 +45,11 @@ export function RentRecordsPage() {
     <article className="page-section rent-records-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Ledger</p>
           <h3>Rent Records</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/rent-schedules + /api/rent-payments</code>
+          <span className="module-chip">Payment Ledger</span>
           <button
             type="button"
             className="secondary-button"

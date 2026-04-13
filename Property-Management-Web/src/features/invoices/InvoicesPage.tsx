@@ -133,11 +133,11 @@ export function InvoicesPage() {
     <article className="page-section properties-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Billing</p>
           <h3>Invoices</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/invoices</code>
+          <span className="module-chip">Vendor Billing</span>
           <button
             type="button"
             className="secondary-button"

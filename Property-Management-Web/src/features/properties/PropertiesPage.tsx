@@ -106,10 +106,10 @@ export function PropertiesPage() {
     <article className="page-section properties-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Portfolio</p>
           <h3>Properties</h3>
         </div>
-        <code>/api/properties</code>
+        <span className="module-chip">Property Administration</span>
       </div>
 
       <p>

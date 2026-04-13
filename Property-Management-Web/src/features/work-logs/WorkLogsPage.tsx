@@ -84,11 +84,11 @@ export function WorkLogsPage() {
     <article className="page-section work-logs-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Field Activity</p>
           <h3>Work Logs</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/work-logs</code>
+          <span className="module-chip">Proof and Time Tracking</span>
           <button
             type="button"
             className="secondary-button"

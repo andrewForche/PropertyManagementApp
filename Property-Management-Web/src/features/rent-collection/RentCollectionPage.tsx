@@ -109,11 +109,11 @@ export function RentCollectionPage() {
     <article className="page-section rent-collection-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Collections</p>
           <h3>Rent Collection</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/rent-schedules</code>
+          <span className="module-chip">Collections Workspace</span>
           <button
             type="button"
             className="secondary-button"

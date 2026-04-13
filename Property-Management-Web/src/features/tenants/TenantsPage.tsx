@@ -137,11 +137,11 @@ export function TenantsPage() {
     <article className="page-section properties-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Leasing</p>
           <h3>Tenants</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/tenants</code>
+          <span className="module-chip">Tenant Directory</span>
           <button
             type="button"
             className="secondary-button"
