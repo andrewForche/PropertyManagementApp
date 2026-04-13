@@ -167,6 +167,10 @@
   grid-column: 1 / -1;
 }
 
+.rent-records-page {
+  grid-column: 1 / -1;
+}
+
 .dashboard-actions {
   display: flex;
   align-items: center;
