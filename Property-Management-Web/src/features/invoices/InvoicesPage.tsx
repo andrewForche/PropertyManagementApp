@@ -7,6 +7,7 @@ import type {
   UpdateInvoiceRequest,
 } from '../../core/interfaces/api'
 import { invoiceService } from '../../core/services/invoices/invoice.service'
+import { AppModal } from '../../shared/ui/AppModal'
 
 const emptyForm: CreateInvoiceRequest = {
   projectId: 0,
@@ -22,6 +23,7 @@ export function InvoicesPage() {
   const [projectOptions, setProjectOptions] = useState<InvoiceProjectOptionModel[]>([])
   const [form, setForm] = useState<CreateInvoiceRequest>(emptyForm)
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -73,6 +75,7 @@ export function InvoicesPage() {
       }
 
       resetForm()
+      setIsModalOpen(false)
       await loadInvoicesModule()
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
@@ -91,6 +94,7 @@ export function InvoicesPage() {
       paidOn: invoice.paidOn ? toDateInput(invoice.paidOn) : '',
       isExported: invoice.isExported,
     })
+    setIsModalOpen(true)
   }
 
   async function handleDelete(invoiceId: number) {
@@ -124,6 +128,16 @@ export function InvoicesPage() {
     })
   }
 
+  function openCreateModal() {
+    resetForm()
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    resetForm()
+  }
+
   const totalBilled = invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0)
   const paidCount = invoices.filter((invoice) => invoice.invoiceStatus === 'Paid').length
   const overdueCount = invoices.filter((invoice) => invoice.invoiceStatus === 'Overdue').length
@@ -138,6 +152,14 @@ export function InvoicesPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Vendor Billing</span>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openCreateModal}
+            disabled={projectOptions.length === 0}
+          >
+            Add Invoice
+          </button>
           <button
             type="button"
             className="secondary-button"
@@ -163,21 +185,96 @@ export function InvoicesPage() {
         <DashboardMetric label="Exported" value={String(exportedCount)} tone="warning" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleSubmit}>
-          <div className="property-form-header">
-            <h4>{editingInvoiceId === null ? 'Add Invoice' : 'Edit Invoice'}</h4>
-            {editingInvoiceId !== null ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancel Edit
-              </button>
-            ) : null}
+      <div className="single-panel-layout">
+        <section className="property-list-panel">
+          <div className="property-list-header">
+            <h4>Invoice Records</h4>
           </div>
 
+          {isLoading ? <p className="status-message">Loading invoices...</p> : null}
+
+          {!isLoading && invoices.length === 0 ? (
+            <p className="status-message">
+              No invoices returned yet. Create one from a maintenance project to get started.
+            </p>
+          ) : null}
+
+          <div className="property-card-list">
+            {invoices.map((invoice) => (
+              <article key={invoice.invoiceId} className="property-card tenant-card">
+                <div className="property-card-header">
+                  <div>
+                    <h5>{invoice.projectTitle}</h5>
+                    <p>{invoice.propertyName}</p>
+                  </div>
+                  <span className={`status-pill ${toInvoiceStatusClass(invoice.invoiceStatus)}`}>
+                    {invoice.invoiceStatus}
+                  </span>
+                </div>
+
+                <dl className="property-details tenant-details">
+                  <div>
+                    <dt>Amount</dt>
+                    <dd>{formatCurrency(invoice.totalAmount)}</dd>
+                  </div>
+                  <div>
+                    <dt>Vendor</dt>
+                    <dd>{invoice.assignedVendor || 'Unassigned'}</dd>
+                  </div>
+                  <div>
+                    <dt>Exported</dt>
+                    <dd>{invoice.isExported ? 'Yes' : 'No'}</dd>
+                  </div>
+                </dl>
+
+                <p className="tenant-address">
+                  {invoice.addressLine1}
+                  {invoice.unitNumber ? `, ${invoice.unitNumber}` : ''}
+                </p>
+
+                <dl className="property-details tenant-details">
+                  <div>
+                    <dt>Issued</dt>
+                    <dd>{invoice.issuedOn ? formatDate(invoice.issuedOn) : 'Not set'}</dd>
+                  </div>
+                  <div>
+                    <dt>Paid</dt>
+                    <dd>{invoice.paidOn ? formatDate(invoice.paidOn) : 'Not paid'}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{formatDate(invoice.updatedAt)}</dd>
+                  </div>
+                </dl>
+
+                <div className="property-card-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => handleEdit(invoice)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-button"
+                    onClick={() => void handleDelete(invoice.invoiceId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <AppModal
+        title={editingInvoiceId === null ? 'Add Invoice' : 'Edit Invoice'}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleSubmit}>
           <label>
             Maintenance Project
             <select
@@ -287,89 +384,7 @@ export function InvoicesPage() {
                 : 'Save Changes'}
           </button>
         </form>
-
-        <section className="property-list-panel">
-          <div className="property-list-header">
-            <h4>Invoice Records</h4>
-          </div>
-
-          {isLoading ? <p className="status-message">Loading invoices...</p> : null}
-
-          {!isLoading && invoices.length === 0 ? (
-            <p className="status-message">
-              No invoices returned yet. Create one from a maintenance project to get started.
-            </p>
-          ) : null}
-
-          <div className="property-card-list">
-            {invoices.map((invoice) => (
-              <article key={invoice.invoiceId} className="property-card tenant-card">
-                <div className="property-card-header">
-                  <div>
-                    <h5>{invoice.projectTitle}</h5>
-                    <p>{invoice.propertyName}</p>
-                  </div>
-                  <span className={`status-pill ${toInvoiceStatusClass(invoice.invoiceStatus)}`}>
-                    {invoice.invoiceStatus}
-                  </span>
-                </div>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Amount</dt>
-                    <dd>{formatCurrency(invoice.totalAmount)}</dd>
-                  </div>
-                  <div>
-                    <dt>Vendor</dt>
-                    <dd>{invoice.assignedVendor || 'Unassigned'}</dd>
-                  </div>
-                  <div>
-                    <dt>Exported</dt>
-                    <dd>{invoice.isExported ? 'Yes' : 'No'}</dd>
-                  </div>
-                </dl>
-
-                <p className="tenant-address">
-                  {invoice.addressLine1}
-                  {invoice.unitNumber ? `, ${invoice.unitNumber}` : ''}
-                </p>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Issued</dt>
-                    <dd>{invoice.issuedOn ? formatDate(invoice.issuedOn) : 'Not set'}</dd>
-                  </div>
-                  <div>
-                    <dt>Paid</dt>
-                    <dd>{invoice.paidOn ? formatDate(invoice.paidOn) : 'Not paid'}</dd>
-                  </div>
-                  <div>
-                    <dt>Updated</dt>
-                    <dd>{formatDate(invoice.updatedAt)}</dd>
-                  </div>
-                </dl>
-
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(invoice)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(invoice.invoiceId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
+      </AppModal>
     </article>
   )
 }

@@ -6,6 +6,7 @@ import type {
   UpdateRentScheduleRequest,
 } from '../../core/interfaces/api'
 import { rentService } from '../../core/services/rent/rent.service'
+import { AppModal } from '../../shared/ui/AppModal'
 
 const emptyPaymentForm: CreateRentPaymentRequest = {
   scheduleId: 0,
@@ -19,6 +20,7 @@ export function RentCollectionPage() {
   const [schedules, setSchedules] = useState<RentScheduleModel[]>([])
   const [payments, setPayments] = useState<RentPaymentModel[]>([])
   const [paymentForm, setPaymentForm] = useState<CreateRentPaymentRequest>(emptyPaymentForm)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -68,6 +70,7 @@ export function RentCollectionPage() {
         scheduleId: paymentForm.scheduleId,
         paymentDate: new Date().toISOString().slice(0, 16),
       })
+      setIsModalOpen(false)
       await loadRentCollection()
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
@@ -105,6 +108,19 @@ export function RentCollectionPage() {
     (schedule) => schedule.scheduleStatus === 'Partial',
   ).length
 
+  function openCreateModal() {
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    setPaymentForm((current) => ({
+      ...emptyPaymentForm,
+      scheduleId: current.scheduleId || schedules[0]?.scheduleId || 0,
+      paymentDate: new Date().toISOString().slice(0, 16),
+    }))
+  }
+
   return (
     <article className="page-section rent-collection-page">
       <div className="page-section-header">
@@ -114,6 +130,14 @@ export function RentCollectionPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Collections Workspace</span>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openCreateModal}
+            disabled={schedules.length === 0}
+          >
+            Add Payment
+          </button>
           <button
             type="button"
             className="secondary-button"
@@ -140,99 +164,7 @@ export function RentCollectionPage() {
         <DashboardMetric label="Payments Logged" value={String(payments.length)} tone="success" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleRecordPayment}>
-          <div className="property-form-header">
-            <h4>Record Payment</h4>
-          </div>
-
-          <label>
-            Rent Schedule
-            <select
-              value={paymentForm.scheduleId}
-              onChange={(event) =>
-                setPaymentForm((current) => ({
-                  ...current,
-                  scheduleId: Number(event.target.value),
-                }))
-              }
-            >
-              {schedules.map((schedule) => (
-                <option key={schedule.scheduleId} value={schedule.scheduleId}>
-                  {schedule.tenantName} - {schedule.propertyName} - {formatCurrency(schedule.balanceDue)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Amount Paid
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              value={paymentForm.amountPaid}
-              onChange={(event) =>
-                setPaymentForm((current) => ({
-                  ...current,
-                  amountPaid: Number(event.target.value),
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Payment Method
-            <select
-              value={paymentForm.paymentMethod}
-              onChange={(event) =>
-                setPaymentForm((current) => ({
-                  ...current,
-                  paymentMethod: event.target.value as CreateRentPaymentRequest['paymentMethod'],
-                }))
-              }
-            >
-              <option value="ACH">ACH</option>
-              <option value="Card">Card</option>
-              <option value="Cash">Cash</option>
-              <option value="Check">Check</option>
-            </select>
-          </label>
-
-          <label>
-            Payment Date
-            <input
-              type="datetime-local"
-              required
-              value={paymentForm.paymentDate}
-              onChange={(event) =>
-                setPaymentForm((current) => ({
-                  ...current,
-                  paymentDate: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Reference Number
-            <input
-              value={paymentForm.referenceNumber ?? ''}
-              onChange={(event) =>
-                setPaymentForm((current) => ({
-                  ...current,
-                  referenceNumber: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <button type="submit" className="primary-button" disabled={isSaving || schedules.length === 0}>
-            {isSaving ? 'Recording...' : 'Record Payment'}
-          </button>
-        </form>
-
+      <div className="single-panel-layout">
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Rent Chase Board</h4>
@@ -324,6 +256,100 @@ export function RentCollectionPage() {
           </table>
         </div>
       </section>
+
+      <AppModal
+        title="Record Payment"
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleRecordPayment}>
+          <label>
+            Rent Schedule
+            <select
+              value={paymentForm.scheduleId}
+              onChange={(event) =>
+                setPaymentForm((current) => ({
+                  ...current,
+                  scheduleId: Number(event.target.value),
+                }))
+              }
+            >
+              {schedules.map((schedule) => (
+                <option key={schedule.scheduleId} value={schedule.scheduleId}>
+                  {schedule.tenantName} - {schedule.propertyName} - {formatCurrency(schedule.balanceDue)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Amount Paid
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              value={paymentForm.amountPaid}
+              onChange={(event) =>
+                setPaymentForm((current) => ({
+                  ...current,
+                  amountPaid: Number(event.target.value),
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Payment Method
+            <select
+              value={paymentForm.paymentMethod}
+              onChange={(event) =>
+                setPaymentForm((current) => ({
+                  ...current,
+                  paymentMethod: event.target.value as CreateRentPaymentRequest['paymentMethod'],
+                }))
+              }
+            >
+              <option value="ACH">ACH</option>
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="Check">Check</option>
+            </select>
+          </label>
+
+          <label>
+            Payment Date
+            <input
+              type="datetime-local"
+              required
+              value={paymentForm.paymentDate}
+              onChange={(event) =>
+                setPaymentForm((current) => ({
+                  ...current,
+                  paymentDate: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Reference Number
+            <input
+              value={paymentForm.referenceNumber ?? ''}
+              onChange={(event) =>
+                setPaymentForm((current) => ({
+                  ...current,
+                  referenceNumber: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <button type="submit" className="primary-button" disabled={isSaving || schedules.length === 0}>
+            {isSaving ? 'Recording...' : 'Record Payment'}
+          </button>
+        </form>
+      </AppModal>
     </article>
   )
 }

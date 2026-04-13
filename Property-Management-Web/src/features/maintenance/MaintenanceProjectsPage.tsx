@@ -10,6 +10,7 @@ import type {
 } from '../../core/interfaces/api'
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
 import { propertyService } from '../../core/services/properties/property.service'
+import { AppModal } from '../../shared/ui/AppModal'
 
 const emptyProjectForm: CreateMaintenanceProjectRequest = {
   propertyId: 0,
@@ -35,7 +36,10 @@ export function MaintenanceProjectsPage() {
   const [projectForm, setProjectForm] = useState<CreateMaintenanceProjectRequest>(emptyProjectForm)
   const [workLogForm, setWorkLogForm] = useState<CreateWorkLogRequest>(emptyWorkLogForm)
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
+  const [createWorkLogProjectId, setCreateWorkLogProjectId] = useState<number>(0)
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null)
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
+  const [isWorkLogModalOpen, setIsWorkLogModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingProject, setIsSavingProject] = useState(false)
   const [isSavingWorkLog, setIsSavingWorkLog] = useState(false)
@@ -65,6 +69,7 @@ export function MaintenanceProjectsPage() {
       ])
       setProjects(projectData)
       setProperties(propertyData)
+      setCreateWorkLogProjectId((current) => current || projectData[0]?.projectId || 0)
       if (projectData.length === 0) {
         setSelectedProjectId(null)
         setWorkLogs([])
@@ -111,6 +116,7 @@ export function MaintenanceProjectsPage() {
       }
 
       resetProjectForm()
+      setIsProjectModalOpen(false)
       await loadMaintenanceModule()
       if (nextSelectedProjectId !== null) {
         await selectProject(nextSelectedProjectId)
@@ -125,7 +131,7 @@ export function MaintenanceProjectsPage() {
   async function handleWorkLogSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (selectedProjectId === null) {
+    if (createWorkLogProjectId === 0) {
       return
     }
 
@@ -133,14 +139,16 @@ export function MaintenanceProjectsPage() {
       setIsSavingWorkLog(true)
       setErrorMessage(null)
       await maintenanceService.createWorkLog(
-        selectedProjectId,
+        createWorkLogProjectId,
         normalizeWorkLogForm(workLogForm),
       )
       setWorkLogForm({
         ...emptyWorkLogForm,
         clockInTime: new Date().toISOString().slice(0, 16),
       })
-      await selectProject(selectedProjectId)
+      setIsWorkLogModalOpen(false)
+      await loadMaintenanceModule()
+      await selectProject(createWorkLogProjectId)
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
     } finally {
@@ -158,6 +166,7 @@ export function MaintenanceProjectsPage() {
       projectStatus: project.projectStatus,
       assignedVendor: project.assignedVendor ?? '',
     })
+    setIsProjectModalOpen(true)
   }
 
   async function handleDelete(projectId: number) {
@@ -200,6 +209,30 @@ export function MaintenanceProjectsPage() {
     })
   }
 
+  function openProjectModal() {
+    resetProjectForm()
+    setIsProjectModalOpen(true)
+  }
+
+  function closeProjectModal() {
+    setIsProjectModalOpen(false)
+    resetProjectForm()
+  }
+
+  function openWorkLogModal() {
+    setCreateWorkLogProjectId(selectedProjectId ?? projects[0]?.projectId ?? 0)
+    setIsWorkLogModalOpen(true)
+  }
+
+  function closeWorkLogModal() {
+    setIsWorkLogModalOpen(false)
+    setWorkLogForm({
+      ...emptyWorkLogForm,
+      clockInTime: new Date().toISOString().slice(0, 16),
+    })
+    setCreateWorkLogProjectId(selectedProjectId ?? projects[0]?.projectId ?? 0)
+  }
+
   const openProjects = projects.filter((project) => project.projectStatus !== 'Closed').length
   const invoicedProjects = projects.filter((project) => project.projectStatus === 'Invoiced').length
   const bidPipeline = projects.filter((project) => project.projectStatus === 'Bid').length
@@ -214,6 +247,14 @@ export function MaintenanceProjectsPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Project Pipeline</span>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openProjectModal}
+            disabled={properties.length === 0}
+          >
+            Add Project
+          </button>
           <button
             type="button"
             className="secondary-button"
@@ -240,125 +281,7 @@ export function MaintenanceProjectsPage() {
         <DashboardMetric label="Assigned Vendors" value={String(assignedCount)} tone="default" />
       </section>
 
-      <div className="properties-layout maintenance-layout">
-        <form className="property-form" onSubmit={handleProjectSubmit}>
-          <div className="property-form-header">
-            <h4>{editingProjectId === null ? 'Add Project' : 'Edit Project'}</h4>
-            {editingProjectId !== null ? (
-              <button type="button" className="secondary-button" onClick={resetProjectForm}>
-                Cancel Edit
-              </button>
-            ) : null}
-          </div>
-
-          <label>
-            Property
-            <select
-              required
-              value={projectForm.propertyId}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  propertyId: Number(event.target.value),
-                }))
-              }
-            >
-              {properties.map((property) => (
-                <option key={property.propertyId} value={property.propertyId}>
-                  {property.propertyName} - {property.addressLine1}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Project Title
-            <input
-              required
-              value={projectForm.projectTitle}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  projectTitle: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Description
-            <input
-              value={projectForm.projectDescription ?? ''}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  projectDescription: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Bid Amount
-            <input
-              min="0"
-              step="0.01"
-              type="number"
-              value={projectForm.bidAmount ?? 0}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  bidAmount: Number(event.target.value),
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Status
-            <select
-              value={projectForm.projectStatus}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  projectStatus: event.target.value as MaintenanceProjectModel['projectStatus'],
-                }))
-              }
-            >
-              <option value="Bid">Bid</option>
-              <option value="Approved">Approved</option>
-              <option value="Work Order">Work Order</option>
-              <option value="Invoiced">Invoiced</option>
-              <option value="Closed">Closed</option>
-            </select>
-          </label>
-
-          <label>
-            Assigned Vendor
-            <input
-              value={projectForm.assignedVendor ?? ''}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  assignedVendor: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="primary-button"
-            disabled={isSavingProject || properties.length === 0}
-          >
-            {isSavingProject
-              ? 'Saving...'
-              : editingProjectId === null
-                ? 'Create Project'
-                : 'Save Changes'}
-          </button>
-        </form>
-
+      <div className="single-panel-layout">
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Project Records</h4>
@@ -437,13 +360,20 @@ export function MaintenanceProjectsPage() {
         </section>
       </div>
 
-      <div className="dashboard-layout">
-        <section className="dashboard-panel">
+      <section className="dashboard-panel dashboard-panel-wide">
           <div className="dashboard-panel-header">
             <div>
               <p className="eyebrow">Work Logs</p>
               <h4>Project activity</h4>
             </div>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={openWorkLogModal}
+              disabled={projects.length === 0}
+            >
+              Add Work Log
+            </button>
           </div>
 
           {selectedProjectId === null ? (
@@ -478,10 +408,142 @@ export function MaintenanceProjectsPage() {
           )}
         </section>
 
+      <AppModal
+        title={editingProjectId === null ? 'Add Project' : 'Edit Project'}
+        isOpen={isProjectModalOpen}
+        onClose={closeProjectModal}
+      >
+        <form className="property-form" onSubmit={handleProjectSubmit}>
+          <label>
+            Property
+            <select
+              required
+              value={projectForm.propertyId}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  propertyId: Number(event.target.value),
+                }))
+              }
+            >
+              {properties.map((property) => (
+                <option key={property.propertyId} value={property.propertyId}>
+                  {property.propertyName} - {property.addressLine1}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Project Title
+            <input
+              required
+              value={projectForm.projectTitle}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  projectTitle: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Description
+            <textarea
+              value={projectForm.projectDescription ?? ''}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  projectDescription: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Bid Amount
+            <input
+              min="0"
+              step="0.01"
+              type="number"
+              value={projectForm.bidAmount ?? 0}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  bidAmount: Number(event.target.value),
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Status
+            <select
+              value={projectForm.projectStatus}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  projectStatus: event.target.value as MaintenanceProjectModel['projectStatus'],
+                }))
+              }
+            >
+              <option value="Bid">Bid</option>
+              <option value="Approved">Approved</option>
+              <option value="Work Order">Work Order</option>
+              <option value="Invoiced">Invoiced</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </label>
+
+          <label>
+            Assigned Vendor
+            <input
+              value={projectForm.assignedVendor ?? ''}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  assignedVendor: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={isSavingProject || properties.length === 0}
+          >
+            {isSavingProject
+              ? 'Saving...'
+              : editingProjectId === null
+                ? 'Create Project'
+                : 'Save Changes'}
+          </button>
+        </form>
+      </AppModal>
+
+      <AppModal
+        title="Add Work Log"
+        isOpen={isWorkLogModalOpen}
+        onClose={closeWorkLogModal}
+      >
         <form className="property-form" onSubmit={handleWorkLogSubmit}>
-          <div className="property-form-header">
-            <h4>Add Work Log</h4>
-          </div>
+          <label>
+            Project
+            <select
+              required
+              value={createWorkLogProjectId}
+              onChange={(event) => setCreateWorkLogProjectId(Number(event.target.value))}
+            >
+              <option value={0}>Select a project</option>
+              {projects.map((project) => (
+                <option key={project.projectId} value={project.projectId}>
+                  {project.projectTitle} - {project.propertyName}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <label>
             Clock In
@@ -540,7 +602,7 @@ export function MaintenanceProjectsPage() {
 
           <label>
             Notes
-            <input
+            <textarea
               value={workLogForm.workNotes ?? ''}
               onChange={(event) =>
                 setWorkLogForm((current) => ({
@@ -554,12 +616,12 @@ export function MaintenanceProjectsPage() {
           <button
             type="submit"
             className="primary-button"
-            disabled={isSavingWorkLog || selectedProjectId === null}
+            disabled={isSavingWorkLog || createWorkLogProjectId === 0}
           >
             {isSavingWorkLog ? 'Saving...' : 'Add Work Log'}
           </button>
         </form>
-      </div>
+      </AppModal>
     </article>
   )
 }

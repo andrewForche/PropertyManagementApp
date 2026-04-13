@@ -5,6 +5,7 @@ import type {
   WorkLogModel,
 } from '../../core/interfaces/api'
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
+import { AppModal } from '../../shared/ui/AppModal'
 
 const emptyWorkLogForm: CreateWorkLogRequest = {
   clockInTime: new Date().toISOString().slice(0, 16),
@@ -18,7 +19,9 @@ export function WorkLogsPage() {
   const [workLogs, setWorkLogs] = useState<WorkLogModel[]>([])
   const [projects, setProjects] = useState<MaintenanceProjectModel[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<number>(0)
+  const [createProjectId, setCreateProjectId] = useState<number>(0)
   const [form, setForm] = useState<CreateWorkLogRequest>(emptyWorkLogForm)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -37,6 +40,7 @@ export function WorkLogsPage() {
       ])
       setWorkLogs(workLogData)
       setProjects(projectData)
+      setCreateProjectId((current) => current || projectData[0]?.projectId || 0)
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
     } finally {
@@ -47,7 +51,7 @@ export function WorkLogsPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (selectedProjectId === 0) {
+    if (createProjectId === 0) {
       return
     }
 
@@ -55,13 +59,14 @@ export function WorkLogsPage() {
       setIsSaving(true)
       setErrorMessage(null)
       await maintenanceService.createWorkLog(
-        selectedProjectId,
+        createProjectId,
         normalizeForm(form),
       )
       setForm({
         ...emptyWorkLogForm,
         clockInTime: new Date().toISOString().slice(0, 16),
       })
+      setIsModalOpen(false)
       await loadWorkLogsModule()
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
@@ -80,6 +85,20 @@ export function WorkLogsPage() {
   const logsWithPhotos = workLogs.filter((workLog) => workLog.proofPhotoUrl).length
   const activeProjects = new Set(workLogs.map((workLog) => workLog.projectId)).size
 
+  function openCreateModal() {
+    setCreateProjectId((current) => current || projects[0]?.projectId || 0)
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    setForm({
+      ...emptyWorkLogForm,
+      clockInTime: new Date().toISOString().slice(0, 16),
+    })
+    setCreateProjectId(projects[0]?.projectId ?? 0)
+  }
+
   return (
     <article className="page-section work-logs-page">
       <div className="page-section-header">
@@ -89,6 +108,14 @@ export function WorkLogsPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Proof and Time Tracking</span>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openCreateModal}
+            disabled={projects.length === 0}
+          >
+            Add Work Log
+          </button>
           <button
             type="button"
             className="secondary-button"
@@ -115,105 +142,7 @@ export function WorkLogsPage() {
         <DashboardMetric label="Active Projects" value={String(activeProjects)} tone="default" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleSubmit}>
-          <div className="property-form-header">
-            <h4>Add Work Log</h4>
-          </div>
-
-          <label>
-            Project
-            <select
-              required
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(Number(event.target.value))}
-            >
-              <option value={0}>Select a project</option>
-              {projects.map((project) => (
-                <option key={project.projectId} value={project.projectId}>
-                  {project.projectTitle} - {project.propertyName}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Clock In
-            <input
-              required
-              type="datetime-local"
-              value={form.clockInTime}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  clockInTime: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Clock Out
-            <input
-              type="datetime-local"
-              value={form.clockOutTime ?? ''}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  clockOutTime: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            GPS Location
-            <input
-              value={form.gpsLocation ?? ''}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  gpsLocation: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Proof Photo URL
-            <input
-              value={form.proofPhotoUrl ?? ''}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  proofPhotoUrl: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <label>
-            Notes
-            <input
-              value={form.workNotes ?? ''}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  workNotes: event.target.value,
-                }))
-              }
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="primary-button"
-            disabled={isSaving || selectedProjectId === 0}
-          >
-            {isSaving ? 'Saving...' : 'Create Work Log'}
-          </button>
-        </form>
-
+      <div className="single-panel-layout">
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Work Log Activity</h4>
@@ -286,6 +215,106 @@ export function WorkLogsPage() {
           </div>
         </section>
       </div>
+
+      <AppModal
+        title="Add Work Log"
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleSubmit}>
+          <label>
+            Project
+            <select
+              required
+              value={createProjectId}
+              onChange={(event) => setCreateProjectId(Number(event.target.value))}
+            >
+              <option value={0}>Select a project</option>
+              {projects.map((project) => (
+                <option key={project.projectId} value={project.projectId}>
+                  {project.projectTitle} - {project.propertyName}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Clock In
+            <input
+              required
+              type="datetime-local"
+              value={form.clockInTime}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  clockInTime: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Clock Out
+            <input
+              type="datetime-local"
+              value={form.clockOutTime ?? ''}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  clockOutTime: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            GPS Location
+            <input
+              value={form.gpsLocation ?? ''}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  gpsLocation: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Proof Photo URL
+            <input
+              value={form.proofPhotoUrl ?? ''}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  proofPhotoUrl: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <label>
+            Notes
+            <textarea
+              value={form.workNotes ?? ''}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  workNotes: event.target.value,
+                }))
+              }
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={isSaving || createProjectId === 0}
+          >
+            {isSaving ? 'Saving...' : 'Create Work Log'}
+          </button>
+        </form>
+      </AppModal>
     </article>
   )
 }

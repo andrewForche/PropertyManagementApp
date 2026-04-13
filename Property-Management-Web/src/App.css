@@ -209,6 +209,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dashboard-kpis {
@@ -325,6 +326,11 @@
   gap: 18px;
 }
 
+.single-panel-layout {
+  display: grid;
+  gap: 18px;
+}
+
 .property-form,
 .property-list-panel,
 .property-card {
@@ -381,6 +387,18 @@
   border: 1px solid #d2dee8;
   background: #f9fbfd;
   color: #183247;
+}
+
+.property-form textarea {
+  width: 100%;
+  min-height: 112px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid #d2dee8;
+  background: #f9fbfd;
+  color: #183247;
+  resize: vertical;
+  font: inherit;
 }
 
 .primary-button,
@@ -558,6 +576,51 @@
   color: #183247;
 }
 
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 24, 36, 0.52);
+  backdrop-filter: blur(4px);
+}
+
+.app-modal {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-radius: 22px;
+  border: 1px solid rgba(159, 180, 199, 0.25);
+  background: #ffffff;
+  box-shadow: 0 28px 64px rgba(16, 36, 52, 0.24);
+}
+
+.app-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(181, 198, 212, 0.28);
+}
+
+.app-modal-body {
+  padding: 22px;
+}
+
+.app-modal-body .property-form {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.app-modal-close {
+  flex-shrink: 0;
+}
+
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -579,5 +642,14 @@
   .content,
   .sidebar {
     padding: 20px;
+  }
+
+  .app-modal-overlay {
+    padding: 16px;
+  }
+
+  .app-modal-header {
+    flex-direction: column;
+    align-items: start;
   }
 }

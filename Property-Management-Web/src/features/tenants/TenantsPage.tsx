@@ -8,6 +8,7 @@ import type {
 } from '../../core/interfaces/api'
 import { propertyService } from '../../core/services/properties/property.service'
 import { tenantService } from '../../core/services/tenants/tenant.service'
+import { AppModal } from '../../shared/ui/AppModal'
 
 const emptyForm: CreateTenantRequest = {
   firstName: '',
@@ -25,6 +26,7 @@ export function TenantsPage() {
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [form, setForm] = useState<CreateTenantRequest>(emptyForm)
   const [editingTenantId, setEditingTenantId] = useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -76,6 +78,7 @@ export function TenantsPage() {
       }
 
       resetForm()
+      setIsModalOpen(false)
       await loadTenantModule()
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
@@ -96,6 +99,7 @@ export function TenantsPage() {
       leaseEndDate: tenant.leaseEndDate ? toDateInput(tenant.leaseEndDate) : '',
       tenantStatus: tenant.tenantStatus,
     })
+    setIsModalOpen(true)
   }
 
   async function handleDelete(tenantId: number) {
@@ -129,6 +133,16 @@ export function TenantsPage() {
     })
   }
 
+  function openCreateModal() {
+    resetForm()
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    resetForm()
+  }
+
   const activeCount = tenants.filter((tenant) => tenant.tenantStatus === 'active').length
   const pastDueCount = tenants.filter((tenant) => tenant.tenantStatus === 'past_due').length
   const applicantCount = tenants.filter((tenant) => tenant.tenantStatus === 'applicant').length
@@ -142,6 +156,14 @@ export function TenantsPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Tenant Directory</span>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openCreateModal}
+            disabled={properties.length === 0}
+          >
+            Add Tenant
+          </button>
           <button
             type="button"
             className="secondary-button"
@@ -168,21 +190,96 @@ export function TenantsPage() {
         <DashboardMetric label="Properties Linked" value={String(properties.length)} tone="default" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleSubmit}>
-          <div className="property-form-header">
-            <h4>{editingTenantId === null ? 'Add Tenant' : 'Edit Tenant'}</h4>
-            {editingTenantId !== null ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancel Edit
-              </button>
-            ) : null}
+      <div className="single-panel-layout">
+        <section className="property-list-panel">
+          <div className="property-list-header">
+            <h4>Tenant Records</h4>
           </div>
 
+          {isLoading ? <p className="status-message">Loading tenants...</p> : null}
+
+          {!isLoading && tenants.length === 0 ? (
+            <p className="status-message">
+              No tenants returned yet. Add a tenant once properties are available.
+            </p>
+          ) : null}
+
+          <div className="property-card-list">
+            {tenants.map((tenant) => (
+              <article key={tenant.tenantId} className="property-card tenant-card">
+                <div className="property-card-header">
+                  <div>
+                    <h5>{tenant.fullName}</h5>
+                    <p>{tenant.email}</p>
+                  </div>
+                  <span className={`status-pill ${toTenantStatusClass(tenant.tenantStatus)}`}>
+                    {tenant.tenantStatus.replace('_', ' ')}
+                  </span>
+                </div>
+
+                <dl className="property-details tenant-details">
+                  <div>
+                    <dt>Phone</dt>
+                    <dd>{tenant.phoneNumber}</dd>
+                  </div>
+                  <div>
+                    <dt>Property</dt>
+                    <dd>{tenant.propertyName}</dd>
+                  </div>
+                  <div>
+                    <dt>Unit</dt>
+                    <dd>{tenant.unitNumber || 'N/A'}</dd>
+                  </div>
+                </dl>
+
+                <p className="tenant-address">
+                  {tenant.addressLine1}
+                  {tenant.unitNumber ? `, ${tenant.unitNumber}` : ''}
+                </p>
+
+                <dl className="property-details tenant-details">
+                  <div>
+                    <dt>Lease Start</dt>
+                    <dd>{tenant.leaseStartDate ? formatDate(tenant.leaseStartDate) : 'Not set'}</dd>
+                  </div>
+                  <div>
+                    <dt>Lease End</dt>
+                    <dd>{tenant.leaseEndDate ? formatDate(tenant.leaseEndDate) : 'Not set'}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{formatDate(tenant.updatedAt)}</dd>
+                  </div>
+                </dl>
+
+                <div className="property-card-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => handleEdit(tenant)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-button"
+                    onClick={() => void handleDelete(tenant.tenantId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <AppModal
+        title={editingTenantId === null ? 'Add Tenant' : 'Edit Tenant'}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleSubmit}>
           <label>
             First Name
             <input
@@ -319,89 +416,7 @@ export function TenantsPage() {
                 : 'Save Changes'}
           </button>
         </form>
-
-        <section className="property-list-panel">
-          <div className="property-list-header">
-            <h4>Tenant Records</h4>
-          </div>
-
-          {isLoading ? <p className="status-message">Loading tenants...</p> : null}
-
-          {!isLoading && tenants.length === 0 ? (
-            <p className="status-message">
-              No tenants returned yet. Add a tenant once properties are available.
-            </p>
-          ) : null}
-
-          <div className="property-card-list">
-            {tenants.map((tenant) => (
-              <article key={tenant.tenantId} className="property-card tenant-card">
-                <div className="property-card-header">
-                  <div>
-                    <h5>{tenant.fullName}</h5>
-                    <p>{tenant.email}</p>
-                  </div>
-                  <span className={`status-pill ${toTenantStatusClass(tenant.tenantStatus)}`}>
-                    {tenant.tenantStatus.replace('_', ' ')}
-                  </span>
-                </div>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Phone</dt>
-                    <dd>{tenant.phoneNumber}</dd>
-                  </div>
-                  <div>
-                    <dt>Property</dt>
-                    <dd>{tenant.propertyName}</dd>
-                  </div>
-                  <div>
-                    <dt>Unit</dt>
-                    <dd>{tenant.unitNumber || 'N/A'}</dd>
-                  </div>
-                </dl>
-
-                <p className="tenant-address">
-                  {tenant.addressLine1}
-                  {tenant.unitNumber ? `, ${tenant.unitNumber}` : ''}
-                </p>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Lease Start</dt>
-                    <dd>{tenant.leaseStartDate ? formatDate(tenant.leaseStartDate) : 'Not set'}</dd>
-                  </div>
-                  <div>
-                    <dt>Lease End</dt>
-                    <dd>{tenant.leaseEndDate ? formatDate(tenant.leaseEndDate) : 'Not set'}</dd>
-                  </div>
-                  <div>
-                    <dt>Updated</dt>
-                    <dd>{formatDate(tenant.updatedAt)}</dd>
-                  </div>
-                </dl>
-
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(tenant)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(tenant.tenantId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
+      </AppModal>
     </article>
   )
 }
