@@ -125,9 +125,6 @@ export function PropertiesPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Property Administration</span>
-          <button type="button" className="primary-button" onClick={openCreateModal}>
-            Add Property
-          </button>
           <button
             type="button"
             className="secondary-button"
@@ -148,6 +145,9 @@ export function PropertiesPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Property Records</h4>
+            <button type="button" className="primary-button" onClick={openCreateModal}>
+              Add Property
+            </button>
           </div>
 
           {errorMessage ? <p className="status-message error">{errorMessage}</p> : null}

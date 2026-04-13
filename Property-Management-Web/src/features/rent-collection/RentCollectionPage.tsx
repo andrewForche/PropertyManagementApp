@@ -132,14 +132,6 @@ export function RentCollectionPage() {
           <span className="module-chip">Collections Workspace</span>
           <button
             type="button"
-            className="primary-button"
-            onClick={openCreateModal}
-            disabled={schedules.length === 0}
-          >
-            Add Payment
-          </button>
-          <button
-            type="button"
             className="secondary-button"
             onClick={() => void loadRentCollection()}
             disabled={isLoading}
@@ -230,6 +222,14 @@ export function RentCollectionPage() {
             <p className="eyebrow">Recent Payments</p>
             <h4>Payment activity</h4>
           </div>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openCreateModal}
+            disabled={schedules.length === 0}
+          >
+            Add Payment
+          </button>
         </div>
         <div className="dashboard-table-wrapper">
           <table className="dashboard-table">

@@ -154,14 +154,6 @@ export function InvoicesPage() {
           <span className="module-chip">Vendor Billing</span>
           <button
             type="button"
-            className="primary-button"
-            onClick={openCreateModal}
-            disabled={projectOptions.length === 0}
-          >
-            Add Invoice
-          </button>
-          <button
-            type="button"
             className="secondary-button"
             onClick={() => void loadInvoicesModule()}
             disabled={isLoading}
@@ -189,6 +181,14 @@ export function InvoicesPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Invoice Records</h4>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={openCreateModal}
+              disabled={projectOptions.length === 0}
+            >
+              Add Invoice
+            </button>
           </div>
 
           {isLoading ? <p className="status-message">Loading invoices...</p> : null}

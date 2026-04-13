@@ -110,14 +110,6 @@ export function WorkLogsPage() {
           <span className="module-chip">Proof and Time Tracking</span>
           <button
             type="button"
-            className="primary-button"
-            onClick={openCreateModal}
-            disabled={projects.length === 0}
-          >
-            Add Work Log
-          </button>
-          <button
-            type="button"
             className="secondary-button"
             onClick={() => void loadWorkLogsModule()}
             disabled={isLoading}
@@ -146,18 +138,28 @@ export function WorkLogsPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Work Log Activity</h4>
-            <select
-              className="inline-filter"
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(Number(event.target.value))}
-            >
-              <option value={0}>All Projects</option>
-              {projects.map((project) => (
-                <option key={project.projectId} value={project.projectId}>
-                  {project.projectTitle}
-                </option>
-              ))}
-            </select>
+            <div className="dashboard-actions">
+              <select
+                className="inline-filter"
+                value={selectedProjectId}
+                onChange={(event) => setSelectedProjectId(Number(event.target.value))}
+              >
+                <option value={0}>All Projects</option>
+                {projects.map((project) => (
+                  <option key={project.projectId} value={project.projectId}>
+                    {project.projectTitle}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openCreateModal}
+                disabled={projects.length === 0}
+              >
+                Add Work Log
+              </button>
+            </div>
           </div>
 
           {isLoading ? <p className="status-message">Loading work logs...</p> : null}

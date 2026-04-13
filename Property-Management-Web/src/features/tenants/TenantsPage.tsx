@@ -158,14 +158,6 @@ export function TenantsPage() {
           <span className="module-chip">Tenant Directory</span>
           <button
             type="button"
-            className="primary-button"
-            onClick={openCreateModal}
-            disabled={properties.length === 0}
-          >
-            Add Tenant
-          </button>
-          <button
-            type="button"
             className="secondary-button"
             onClick={() => void loadTenantModule()}
             disabled={isLoading}
@@ -194,6 +186,14 @@ export function TenantsPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Tenant Records</h4>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={openCreateModal}
+              disabled={properties.length === 0}
+            >
+              Add Tenant
+            </button>
           </div>
 
           {isLoading ? <p className="status-message">Loading tenants...</p> : null}
