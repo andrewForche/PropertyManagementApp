@@ -159,6 +159,118 @@
   gap: 8px;
 }
 
+.dashboard-page {
+  grid-column: 1 / -1;
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-metric,
+.dashboard-panel {
+  border-radius: 18px;
+  border: 1px solid rgba(78, 63, 40, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.dashboard-metric {
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-metric span {
+  color: #6c6254;
+  font-size: 0.9rem;
+}
+
+.dashboard-metric strong {
+  color: #173a38;
+  font-size: 1.6rem;
+}
+
+.dashboard-metric.success {
+  background: linear-gradient(180deg, #f8fff7 0%, #edf7ea 100%);
+}
+
+.dashboard-metric.warning {
+  background: linear-gradient(180deg, #fffaf0 0%, #f8eed7 100%);
+}
+
+.dashboard-metric.danger {
+  background: linear-gradient(180deg, #fff7f4 0%, #f6e3de 100%);
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dashboard-panel {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-panel-wide {
+  grid-column: 1 / -1;
+}
+
+.dashboard-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+}
+
+.dashboard-panel h4 {
+  margin: 0;
+  color: #173a38;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.panel-caption {
+  color: #7a6e5d;
+  font-size: 0.85rem;
+}
+
+.dashboard-table-wrapper {
+  overflow-x: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(78, 63, 40, 0.12);
+}
+
+.dashboard-table th {
+  color: #7a6e5d;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .properties-page {
   grid-column: 1 / -1;
 }
@@ -350,6 +462,8 @@
 
   .page-grid,
   .hero-metrics,
+  .dashboard-kpis,
+  .dashboard-layout,
   .properties-layout,
   .property-details {
     grid-template-columns: 1fr;
