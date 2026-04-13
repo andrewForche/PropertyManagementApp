@@ -4,6 +4,7 @@ import { DashboardSummaryPage } from '../features/dashboard/DashboardSummaryPage
 import { RentCollectionPage } from '../features/rent-collection/RentCollectionPage'
 import { RentRecordsPage } from '../features/rent-records/RentRecordsPage'
 import { MaintenanceProjectsPage } from '../features/maintenance/MaintenanceProjectsPage'
+import { WorkLogsPage } from '../features/work-logs/WorkLogsPage'
 import { InvoicesPage } from '../features/invoices/InvoicesPage'
 import { PropertiesPage } from '../features/properties/PropertiesPage'
 import { TenantsPage } from '../features/tenants/TenantsPage'
@@ -13,6 +14,7 @@ const pages = [
   RentCollectionPage,
   RentRecordsPage,
   MaintenanceProjectsPage,
+  WorkLogsPage,
   InvoicesPage,
   PropertiesPage,
   TenantsPage,

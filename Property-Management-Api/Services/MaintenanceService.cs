@@ -38,6 +38,11 @@ public sealed class MaintenanceService : IMaintenanceService
         return _maintenanceDataService.DeleteProjectAsync(projectId, cancellationToken);
     }
 
+    public Task<IReadOnlyCollection<WorkLogResponse>> GetAllWorkLogsAsync(CancellationToken cancellationToken)
+    {
+        return _maintenanceDataService.GetAllWorkLogsAsync(cancellationToken);
+    }
+
     public Task<IReadOnlyCollection<WorkLogResponse>> GetWorkLogsAsync(int projectId, CancellationToken cancellationToken)
     {
         return _maintenanceDataService.GetWorkLogsAsync(projectId, cancellationToken);

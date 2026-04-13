@@ -143,6 +143,28 @@ public sealed class MaintenanceDataService : IMaintenanceDataService
         return affectedRows > 0;
     }
 
+    public async Task<IReadOnlyCollection<WorkLogResponse>> GetAllWorkLogsAsync(CancellationToken cancellationToken)
+    {
+        const string sql = WorkLogSelectSql + """
+            ORDER BY wl.ClockInTime DESC, wl.WorkLogId DESC;
+            """;
+
+        var workLogs = new List<WorkLogResponse>();
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new MySqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            workLogs.Add(MapWorkLog(reader));
+        }
+
+        return workLogs;
+    }
+
     public async Task<IReadOnlyCollection<WorkLogResponse>> GetWorkLogsAsync(int projectId, CancellationToken cancellationToken)
     {
         const string sql = WorkLogSelectSql + """
@@ -270,6 +292,8 @@ public sealed class MaintenanceDataService : IMaintenanceDataService
 
     private static WorkLogResponse MapWorkLog(MySqlDataReader reader)
     {
+        var unitNumberOrdinal = reader.GetOrdinal("UnitNumber");
+        var assignedVendorOrdinal = reader.GetOrdinal("AssignedVendor");
         var clockOutTimeOrdinal = reader.GetOrdinal("ClockOutTime");
         var gpsLocationOrdinal = reader.GetOrdinal("GPSLocation");
         var proofPhotoUrlOrdinal = reader.GetOrdinal("ProofPhotoUrl");
@@ -280,6 +304,11 @@ public sealed class MaintenanceDataService : IMaintenanceDataService
             WorkLogId = reader.GetInt32("WorkLogId"),
             ProjectId = reader.GetInt32("ProjectId"),
             ProjectTitle = reader.GetString("ProjectTitle"),
+            PropertyName = reader.GetString("PropertyName"),
+            AddressLine1 = reader.GetString("AddressLine1"),
+            UnitNumber = reader.IsDBNull(unitNumberOrdinal) ? null : reader.GetString("UnitNumber"),
+            AssignedVendor = reader.IsDBNull(assignedVendorOrdinal) ? null : reader.GetString("AssignedVendor"),
+            ProjectStatus = reader.GetString("ProjectStatus"),
             ClockInTime = reader.GetDateTime("ClockInTime"),
             ClockOutTime = reader.IsDBNull(clockOutTimeOrdinal) ? null : reader.GetDateTime("ClockOutTime"),
             GpsLocation = reader.IsDBNull(gpsLocationOrdinal) ? null : reader.GetString("GPSLocation"),
@@ -313,6 +342,11 @@ public sealed class MaintenanceDataService : IMaintenanceDataService
             wl.WorkLogId,
             wl.ProjectId,
             mp.ProjectTitle,
+            p.PropertyName,
+            p.AddressLine1,
+            p.UnitNumber,
+            mp.AssignedVendor,
+            mp.ProjectStatus,
             wl.ClockInTime,
             wl.ClockOutTime,
             wl.GPSLocation,
@@ -321,6 +355,7 @@ public sealed class MaintenanceDataService : IMaintenanceDataService
             wl.CreatedAt
         FROM WorkLogs wl
         INNER JOIN MaintenanceProjects mp ON mp.ProjectId = wl.ProjectId
+        INNER JOIN Properties p ON p.PropertyId = mp.PropertyId
         
         """;
 }

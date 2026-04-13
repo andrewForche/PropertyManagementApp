@@ -10,6 +10,7 @@ public interface IMaintenanceDataService
     Task<MaintenanceProjectResponse> CreateProjectAsync(CreateMaintenanceProjectRequest request, CancellationToken cancellationToken);
     Task<MaintenanceProjectResponse?> UpdateProjectAsync(int projectId, UpdateMaintenanceProjectRequest request, CancellationToken cancellationToken);
     Task<bool> DeleteProjectAsync(int projectId, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<WorkLogResponse>> GetAllWorkLogsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<WorkLogResponse>> GetWorkLogsAsync(int projectId, CancellationToken cancellationToken);
     Task<WorkLogResponse> CreateWorkLogAsync(int projectId, CreateWorkLogRequest request, CancellationToken cancellationToken);
 }

@@ -171,6 +171,10 @@
   grid-column: 1 / -1;
 }
 
+.work-logs-page {
+  grid-column: 1 / -1;
+}
+
 .dashboard-actions {
   display: flex;
   align-items: center;
@@ -506,6 +510,14 @@
 .compact-button {
   padding: 8px 10px;
   font-size: 0.85rem;
+}
+
+.inline-filter {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(78, 63, 40, 0.18);
+  background: #fffcf7;
+  color: #173a38;
 }
 
 @media (max-width: 960px) {

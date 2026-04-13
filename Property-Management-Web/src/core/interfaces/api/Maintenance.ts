@@ -17,6 +17,11 @@ export interface WorkLogModel {
   workLogId: number
   projectId: number
   projectTitle: string
+  propertyName: string
+  addressLine1: string
+  unitNumber?: string
+  assignedVendor?: string
+  projectStatus: 'Bid' | 'Approved' | 'Work Order' | 'Invoiced' | 'Closed'
   clockInTime: string
   clockOutTime?: string
   gpsLocation?: string

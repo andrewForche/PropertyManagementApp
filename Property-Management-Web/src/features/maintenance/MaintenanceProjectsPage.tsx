@@ -54,25 +54,24 @@ export function MaintenanceProjectsPage() {
     }
   }, [projectForm.propertyId, properties])
 
-  useEffect(() => {
-    if (projects.length > 0 && selectedProjectId === null) {
-      void selectProject(projects[0].projectId)
-    }
-  }, [projects, selectedProjectId])
-
   async function loadMaintenanceModule() {
     try {
       setIsLoading(true)
       setErrorMessage(null)
-      const [projectData, propertyData] = await Promise.all([
+      const [projectData, propertyData, allWorkLogs] = await Promise.all([
         maintenanceService.getProjects(),
         propertyService.getAll(),
+        maintenanceService.getAllWorkLogs(),
       ])
       setProjects(projectData)
       setProperties(propertyData)
       if (projectData.length === 0) {
         setSelectedProjectId(null)
         setWorkLogs([])
+      } else if (selectedProjectId === null) {
+        const preferredProjectId =
+          allWorkLogs[0]?.projectId ?? projectData[0].projectId
+        await selectProject(preferredProjectId)
       }
     } catch (error) {
       setErrorMessage(getErrorMessage(error))

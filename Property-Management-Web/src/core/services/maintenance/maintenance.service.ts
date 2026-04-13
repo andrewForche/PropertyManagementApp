@@ -10,6 +10,7 @@ import { apiClient } from '../http/api-client.service'
 export const maintenanceService = {
   getProjects: () =>
     apiClient.get<MaintenanceProjectModel[]>('/maintenance-projects'),
+  getAllWorkLogs: () => apiClient.get<WorkLogModel[]>('/work-logs'),
   getProjectById: (projectId: number) =>
     apiClient.get<MaintenanceProjectModel>(`/maintenance-projects/${projectId}`),
   createProject: (payload: CreateMaintenanceProjectRequest) =>
