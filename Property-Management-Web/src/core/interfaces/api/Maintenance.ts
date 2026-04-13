@@ -1,19 +1,26 @@
 export interface MaintenanceProjectModel {
-  id: number
+  projectId: number
   propertyId: number
+  propertyName: string
+  addressLine1: string
+  unitNumber?: string
   projectTitle: string
-  description?: string
+  projectDescription?: string
   bidAmount?: number
-  status: 'bid' | 'approved' | 'work-order' | 'invoiced' | 'closed'
+  projectStatus: 'Bid' | 'Approved' | 'Work Order' | 'Invoiced' | 'Closed'
   assignedVendor?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface WorkLogModel {
-  id: number
+  workLogId: number
   projectId: number
+  projectTitle: string
   clockInTime: string
   clockOutTime?: string
   gpsLocation?: string
   proofPhotoUrl?: string
-  notes?: string
+  workNotes?: string
+  createdAt: string
 }

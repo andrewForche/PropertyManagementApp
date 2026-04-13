@@ -28,6 +28,8 @@ builder.Services.AddScoped<ITenantDataService, TenantDataService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<IInvoiceDataService, InvoiceDataService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IMaintenanceDataService, MaintenanceDataService>();
+builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IRentCollectionDataService, RentCollectionDataService>();
 builder.Services.AddScoped<IRentCollectionService, RentCollectionService>();
 

@@ -292,7 +292,7 @@ export function RentCollectionPage() {
         </section>
       </div>
 
-      <section className="dashboard-panel">
+      <section className="dashboard-panel dashboard-panel-wide">
         <div className="dashboard-panel-header">
           <div>
             <p className="eyebrow">Recent Payments</p>
@@ -311,7 +311,7 @@ export function RentCollectionPage() {
               </tr>
             </thead>
             <tbody>
-              {payments.slice(0, 6).map((payment) => (
+              {payments.map((payment) => (
                 <tr key={payment.paymentId}>
                   <td>{payment.tenantName}</td>
                   <td>{payment.paymentMethod}</td>

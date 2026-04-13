@@ -163,6 +163,10 @@
   grid-column: 1 / -1;
 }
 
+.rent-collection-page {
+  grid-column: 1 / -1;
+}
+
 .dashboard-actions {
   display: flex;
   align-items: center;
@@ -406,6 +410,19 @@
 
 .tenant-details {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.maintenance-layout {
+  align-items: start;
+}
+
+.selected-card {
+  box-shadow: 0 0 0 2px rgba(23, 58, 56, 0.18);
+}
+
+.status-pill.warning {
+  background: #efe4c8;
+  color: #7a5920;
 }
 
 .property-details {

@@ -5,7 +5,7 @@ using Property_Management_Api.Services;
 namespace Property_Management_Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/rent-payments")]
 public class RentPaymentsController : ControllerBase
 {
     private readonly IRentCollectionService _rentCollectionService;
