@@ -568,6 +568,25 @@
   font-size: 0.85rem;
 }
 
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 42px;
+  padding: 10px;
+}
+
+.chevron-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 160ms ease;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
 .inline-filter {
   padding: 10px 12px;
   border-radius: 12px;

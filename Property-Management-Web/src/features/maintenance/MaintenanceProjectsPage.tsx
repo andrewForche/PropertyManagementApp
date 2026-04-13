@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type {
   CreateMaintenanceProjectRequest,
@@ -41,10 +41,13 @@ export function MaintenanceProjectsPage() {
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null)
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
   const [isWorkLogModalOpen, setIsWorkLogModalOpen] = useState(false)
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState(true)
+  const [isWorkLogsExpanded, setIsWorkLogsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingProject, setIsSavingProject] = useState(false)
   const [isSavingWorkLog, setIsSavingWorkLog] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const workLogsSectionRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     void loadMaintenanceModule()
@@ -237,6 +240,17 @@ export function MaintenanceProjectsPage() {
     setCreateWorkLogProjectId(selectedProjectId ?? projects[0]?.projectId ?? 0)
   }
 
+  async function handleViewLogs(projectId: number) {
+    setIsWorkLogsExpanded(true)
+    await selectProject(projectId)
+    requestAnimationFrame(() => {
+      workLogsSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    })
+  }
+
   const openProjects = projects.filter((project) => project.projectStatus !== 'Closed').length
   const invoicedProjects = projects.filter((project) => project.projectStatus === 'Invoiced').length
   const bidPipeline = projects.filter((project) => project.projectStatus === 'Bid').length
@@ -251,14 +265,6 @@ export function MaintenanceProjectsPage() {
         </div>
         <div className="dashboard-actions">
           <span className="module-chip">Project Pipeline</span>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={openProjectModal}
-            disabled={properties.length === 0}
-          >
-            Add Project
-          </button>
           <button
             type="button"
             className="secondary-button"
@@ -289,104 +295,142 @@ export function MaintenanceProjectsPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Project Records</h4>
-          </div>
-
-          {isLoading ? <p className="status-message">Loading maintenance projects...</p> : null}
-
-          {!isLoading && projects.length === 0 ? (
-            <p className="status-message">
-              No maintenance projects returned yet. Add one to start tracking work.
-            </p>
-          ) : null}
-
-          <div className="property-card-list">
-            {projects.map((project) => {
-              const hasLogs = projectIdsWithLogs.includes(project.projectId)
-
-              return (
-              <article
-                key={project.projectId}
-                className={`property-card tenant-card ${selectedProjectId === project.projectId ? 'selected-card' : ''}`}
+            <div className="dashboard-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openProjectModal}
+                disabled={properties.length === 0}
               >
-                <div className="property-card-header">
-                  <div>
-                    <h5>{project.projectTitle}</h5>
-                    <p>{project.propertyName}</p>
-                  </div>
-                  <span className={`status-pill ${toProjectStatusClass(project.projectStatus)}`}>
-                    {project.projectStatus}
-                  </span>
-                </div>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Bid</dt>
-                    <dd>{project.bidAmount ? formatCurrency(project.bidAmount) : 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt>Vendor</dt>
-                    <dd>{project.assignedVendor || 'Unassigned'}</dd>
-                  </div>
-                  <div>
-                    <dt>Unit</dt>
-                    <dd>{project.unitNumber || 'N/A'}</dd>
-                  </div>
-                </dl>
-
-                <p className="tenant-address">
-                  {project.addressLine1}
-                  {project.projectDescription ? ` - ${project.projectDescription}` : ''}
-                </p>
-
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(project)}
-                  >
-                    Edit
-                  </button>
-                  {hasLogs ? (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => void selectProject(project.projectId)}
-                    >
-                      View Logs
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(project.projectId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-              )
-            })}
+                Add Project
+              </button>
+              <button
+                type="button"
+                className="secondary-button icon-button"
+                onClick={() => setIsProjectsExpanded((current) => !current)}
+                aria-label={isProjectsExpanded ? 'Collapse project records' : 'Expand project records'}
+                title={isProjectsExpanded ? 'Collapse project records' : 'Expand project records'}
+              >
+                <ChevronIcon isExpanded={isProjectsExpanded} />
+              </button>
+            </div>
           </div>
+
+          {isProjectsExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading maintenance projects...</p> : null}
+
+              {!isLoading && projects.length === 0 ? (
+                <p className="status-message">
+                  No maintenance projects returned yet. Add one to start tracking work.
+                </p>
+              ) : null}
+
+              <div className="property-card-list">
+                {projects.map((project) => {
+                  const hasLogs = projectIdsWithLogs.includes(project.projectId)
+
+                  return (
+                    <article
+                      key={project.projectId}
+                      className={`property-card tenant-card ${selectedProjectId === project.projectId ? 'selected-card' : ''}`}
+                    >
+                      <div className="property-card-header">
+                        <div>
+                          <h5>{project.projectTitle}</h5>
+                          <p>{project.propertyName}</p>
+                        </div>
+                        <span className={`status-pill ${toProjectStatusClass(project.projectStatus)}`}>
+                          {project.projectStatus}
+                        </span>
+                      </div>
+
+                      <dl className="property-details tenant-details">
+                        <div>
+                          <dt>Bid</dt>
+                          <dd>{project.bidAmount ? formatCurrency(project.bidAmount) : 'N/A'}</dd>
+                        </div>
+                        <div>
+                          <dt>Vendor</dt>
+                          <dd>{project.assignedVendor || 'Unassigned'}</dd>
+                        </div>
+                        <div>
+                          <dt>Unit</dt>
+                          <dd>{project.unitNumber || 'N/A'}</dd>
+                        </div>
+                      </dl>
+
+                      <p className="tenant-address">
+                        {project.addressLine1}
+                        {project.projectDescription ? ` - ${project.projectDescription}` : ''}
+                      </p>
+
+                      <div className="property-card-actions">
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => handleEdit(project)}
+                        >
+                          Edit
+                        </button>
+                        {hasLogs ? (
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() => void handleViewLogs(project.projectId)}
+                          >
+                            View Logs
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="danger-button"
+                          onClick={() => void handleDelete(project.projectId)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <p className="status-message">Project records are collapsed.</p>
+          )}
         </section>
       </div>
 
-      <section className="dashboard-panel dashboard-panel-wide">
+      <section className="dashboard-panel dashboard-panel-wide" ref={workLogsSectionRef}>
           <div className="dashboard-panel-header">
             <div>
               <p className="eyebrow">Work Logs</p>
               <h4>Project activity</h4>
             </div>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={openWorkLogModal}
-              disabled={projects.length === 0}
-            >
-              Add Work Log
-            </button>
+            <div className="dashboard-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openWorkLogModal}
+                disabled={projects.length === 0}
+              >
+                Add Work Log
+              </button>
+              <button
+                type="button"
+                className="secondary-button icon-button"
+                onClick={() => setIsWorkLogsExpanded((current) => !current)}
+                aria-label={isWorkLogsExpanded ? 'Collapse work logs' : 'Expand work logs'}
+                title={isWorkLogsExpanded ? 'Collapse work logs' : 'Expand work logs'}
+              >
+                <ChevronIcon isExpanded={isWorkLogsExpanded} />
+              </button>
+            </div>
           </div>
 
-          {selectedProjectId === null ? (
+          {!isWorkLogsExpanded ? (
+            <p className="status-message">Work logs are collapsed.</p>
+          ) : selectedProjectId === null ? (
             <p className="status-message">Select a maintenance project to view work logs.</p>
           ) : workLogs.length === 0 ? (
             <p className="status-message">No work logs yet for this project.</p>
@@ -637,6 +681,25 @@ export function MaintenanceProjectsPage() {
 }
 
 MaintenanceProjectsPage.displayName = 'MaintenanceProjectsPage'
+
+function ChevronIcon({ isExpanded }: { isExpanded: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className={`chevron-icon ${isExpanded ? 'expanded' : ''}`}
+    >
+      <path
+        d="M5.5 7.5L10 12l4.5-4.5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  )
+}
 
 function DashboardMetric({
   label,
