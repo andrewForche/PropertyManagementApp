@@ -11,6 +11,7 @@ import type {
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 
 const emptyProjectForm: CreateMaintenanceProjectRequest = {
   propertyId: 0,
@@ -304,15 +305,12 @@ export function MaintenanceProjectsPage() {
               >
                 Add Project
               </button>
-              <button
-                type="button"
-                className="secondary-button icon-button"
+              <CollapseToggleButton
+                isExpanded={isProjectsExpanded}
                 onClick={() => setIsProjectsExpanded((current) => !current)}
-                aria-label={isProjectsExpanded ? 'Collapse project records' : 'Expand project records'}
-                title={isProjectsExpanded ? 'Collapse project records' : 'Expand project records'}
-              >
-                <ChevronIcon isExpanded={isProjectsExpanded} />
-              </button>
+                collapseLabel="Collapse project records"
+                expandLabel="Expand project records"
+              />
             </div>
           </div>
 
@@ -416,15 +414,12 @@ export function MaintenanceProjectsPage() {
               >
                 Add Work Log
               </button>
-              <button
-                type="button"
-                className="secondary-button icon-button"
+              <CollapseToggleButton
+                isExpanded={isWorkLogsExpanded}
                 onClick={() => setIsWorkLogsExpanded((current) => !current)}
-                aria-label={isWorkLogsExpanded ? 'Collapse work logs' : 'Expand work logs'}
-                title={isWorkLogsExpanded ? 'Collapse work logs' : 'Expand work logs'}
-              >
-                <ChevronIcon isExpanded={isWorkLogsExpanded} />
-              </button>
+                collapseLabel="Collapse work logs"
+                expandLabel="Expand work logs"
+              />
             </div>
           </div>
 
@@ -681,25 +676,6 @@ export function MaintenanceProjectsPage() {
 }
 
 MaintenanceProjectsPage.displayName = 'MaintenanceProjectsPage'
-
-function ChevronIcon({ isExpanded }: { isExpanded: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 20 20"
-      className={`chevron-icon ${isExpanded ? 'expanded' : ''}`}
-    >
-      <path
-        d="M5.5 7.5L10 12l4.5-4.5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  )
-}
 
 function DashboardMetric({
   label,

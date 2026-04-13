@@ -9,6 +9,7 @@ import type {
 import { propertyService } from '../../core/services/properties/property.service'
 import { tenantService } from '../../core/services/tenants/tenant.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 
 const emptyForm: CreateTenantRequest = {
   firstName: '',
@@ -27,6 +28,7 @@ export function TenantsPage() {
   const [form, setForm] = useState<CreateTenantRequest>(emptyForm)
   const [editingTenantId, setEditingTenantId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -186,91 +188,105 @@ export function TenantsPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Tenant Records</h4>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={openCreateModal}
-              disabled={properties.length === 0}
-            >
-              Add Tenant
-            </button>
+            <div className="dashboard-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openCreateModal}
+                disabled={properties.length === 0}
+              >
+                Add Tenant
+              </button>
+              <CollapseToggleButton
+                isExpanded={isRecordsExpanded}
+                onClick={() => setIsRecordsExpanded((current) => !current)}
+                collapseLabel="Collapse tenant records"
+                expandLabel="Expand tenant records"
+              />
+            </div>
           </div>
 
-          {isLoading ? <p className="status-message">Loading tenants...</p> : null}
+          {isRecordsExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading tenants...</p> : null}
 
-          {!isLoading && tenants.length === 0 ? (
-            <p className="status-message">
-              No tenants returned yet. Add a tenant once properties are available.
-            </p>
-          ) : null}
-
-          <div className="property-card-list">
-            {tenants.map((tenant) => (
-              <article key={tenant.tenantId} className="property-card tenant-card">
-                <div className="property-card-header">
-                  <div>
-                    <h5>{tenant.fullName}</h5>
-                    <p>{tenant.email}</p>
-                  </div>
-                  <span className={`status-pill ${toTenantStatusClass(tenant.tenantStatus)}`}>
-                    {tenant.tenantStatus.replace('_', ' ')}
-                  </span>
-                </div>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Phone</dt>
-                    <dd>{tenant.phoneNumber}</dd>
-                  </div>
-                  <div>
-                    <dt>Property</dt>
-                    <dd>{tenant.propertyName}</dd>
-                  </div>
-                  <div>
-                    <dt>Unit</dt>
-                    <dd>{tenant.unitNumber || 'N/A'}</dd>
-                  </div>
-                </dl>
-
-                <p className="tenant-address">
-                  {tenant.addressLine1}
-                  {tenant.unitNumber ? `, ${tenant.unitNumber}` : ''}
+              {!isLoading && tenants.length === 0 ? (
+                <p className="status-message">
+                  No tenants returned yet. Add a tenant once properties are available.
                 </p>
+              ) : null}
 
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Lease Start</dt>
-                    <dd>{tenant.leaseStartDate ? formatDate(tenant.leaseStartDate) : 'Not set'}</dd>
-                  </div>
-                  <div>
-                    <dt>Lease End</dt>
-                    <dd>{tenant.leaseEndDate ? formatDate(tenant.leaseEndDate) : 'Not set'}</dd>
-                  </div>
-                  <div>
-                    <dt>Updated</dt>
-                    <dd>{formatDate(tenant.updatedAt)}</dd>
-                  </div>
-                </dl>
+              <div className="property-card-list">
+                {tenants.map((tenant) => (
+                  <article key={tenant.tenantId} className="property-card tenant-card">
+                    <div className="property-card-header">
+                      <div>
+                        <h5>{tenant.fullName}</h5>
+                        <p>{tenant.email}</p>
+                      </div>
+                      <span className={`status-pill ${toTenantStatusClass(tenant.tenantStatus)}`}>
+                        {tenant.tenantStatus.replace('_', ' ')}
+                      </span>
+                    </div>
 
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(tenant)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(tenant.tenantId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <dl className="property-details tenant-details">
+                      <div>
+                        <dt>Phone</dt>
+                        <dd>{tenant.phoneNumber}</dd>
+                      </div>
+                      <div>
+                        <dt>Property</dt>
+                        <dd>{tenant.propertyName}</dd>
+                      </div>
+                      <div>
+                        <dt>Unit</dt>
+                        <dd>{tenant.unitNumber || 'N/A'}</dd>
+                      </div>
+                    </dl>
+
+                    <p className="tenant-address">
+                      {tenant.addressLine1}
+                      {tenant.unitNumber ? `, ${tenant.unitNumber}` : ''}
+                    </p>
+
+                    <dl className="property-details tenant-details">
+                      <div>
+                        <dt>Lease Start</dt>
+                        <dd>{tenant.leaseStartDate ? formatDate(tenant.leaseStartDate) : 'Not set'}</dd>
+                      </div>
+                      <div>
+                        <dt>Lease End</dt>
+                        <dd>{tenant.leaseEndDate ? formatDate(tenant.leaseEndDate) : 'Not set'}</dd>
+                      </div>
+                      <div>
+                        <dt>Updated</dt>
+                        <dd>{formatDate(tenant.updatedAt)}</dd>
+                      </div>
+                    </dl>
+
+                    <div className="property-card-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => handleEdit(tenant)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => void handleDelete(tenant.tenantId)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="status-message">Tenant records are collapsed.</p>
+          )}
         </section>
       </div>
 

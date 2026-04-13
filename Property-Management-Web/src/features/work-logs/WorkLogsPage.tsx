@@ -6,6 +6,7 @@ import type {
 } from '../../core/interfaces/api'
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 
 const emptyWorkLogForm: CreateWorkLogRequest = {
   clockInTime: new Date().toISOString().slice(0, 16),
@@ -22,6 +23,7 @@ export function WorkLogsPage() {
   const [createProjectId, setCreateProjectId] = useState<number>(0)
   const [form, setForm] = useState<CreateWorkLogRequest>(emptyWorkLogForm)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -159,62 +161,74 @@ export function WorkLogsPage() {
               >
                 Add Work Log
               </button>
+              <CollapseToggleButton
+                isExpanded={isRecordsExpanded}
+                onClick={() => setIsRecordsExpanded((current) => !current)}
+                collapseLabel="Collapse work log activity"
+                expandLabel="Expand work log activity"
+              />
             </div>
           </div>
 
-          {isLoading ? <p className="status-message">Loading work logs...</p> : null}
+          {isRecordsExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading work logs...</p> : null}
 
-          {!isLoading && visibleLogs.length === 0 ? (
-            <p className="status-message">No work logs returned for the current filter.</p>
-          ) : null}
+              {!isLoading && visibleLogs.length === 0 ? (
+                <p className="status-message">No work logs returned for the current filter.</p>
+              ) : null}
 
-          <div className="dashboard-table-wrapper">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Property</th>
-                  <th>Status</th>
-                  <th>Clock In</th>
-                  <th>Clock Out</th>
-                  <th>GPS</th>
-                  <th>Photo</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleLogs.map((workLog) => (
-                  <tr key={workLog.workLogId}>
-                    <td>
-                      {workLog.projectTitle}
-                      <br />
-                      <span className="table-subtext">
-                        {workLog.assignedVendor || 'Unassigned vendor'}
-                      </span>
-                    </td>
-                    <td>
-                      {workLog.propertyName}
-                      <br />
-                      <span className="table-subtext">
-                        {workLog.addressLine1}
-                        {workLog.unitNumber ? `, ${workLog.unitNumber}` : ''}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-pill ${toProjectStatusClass(workLog.projectStatus)}`}>
-                        {workLog.projectStatus}
-                      </span>
-                    </td>
-                    <td>{formatDateTime(workLog.clockInTime)}</td>
-                    <td>{workLog.clockOutTime ? formatDateTime(workLog.clockOutTime) : 'Open'}</td>
-                    <td>{workLog.gpsLocation || 'N/A'}</td>
-                    <td>{workLog.proofPhotoUrl || 'N/A'}</td>
-                    <td>{workLog.workNotes || 'N/A'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              <div className="dashboard-table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Property</th>
+                      <th>Status</th>
+                      <th>Clock In</th>
+                      <th>Clock Out</th>
+                      <th>GPS</th>
+                      <th>Photo</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleLogs.map((workLog) => (
+                      <tr key={workLog.workLogId}>
+                        <td>
+                          {workLog.projectTitle}
+                          <br />
+                          <span className="table-subtext">
+                            {workLog.assignedVendor || 'Unassigned vendor'}
+                          </span>
+                        </td>
+                        <td>
+                          {workLog.propertyName}
+                          <br />
+                          <span className="table-subtext">
+                            {workLog.addressLine1}
+                            {workLog.unitNumber ? `, ${workLog.unitNumber}` : ''}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-pill ${toProjectStatusClass(workLog.projectStatus)}`}>
+                            {workLog.projectStatus}
+                          </span>
+                        </td>
+                        <td>{formatDateTime(workLog.clockInTime)}</td>
+                        <td>{workLog.clockOutTime ? formatDateTime(workLog.clockOutTime) : 'Open'}</td>
+                        <td>{workLog.gpsLocation || 'N/A'}</td>
+                        <td>{workLog.proofPhotoUrl || 'N/A'}</td>
+                        <td>{workLog.workNotes || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="status-message">Work log activity is collapsed.</p>
+          )}
         </section>
       </div>
 

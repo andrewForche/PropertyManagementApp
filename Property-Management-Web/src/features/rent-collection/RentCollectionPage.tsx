@@ -7,6 +7,7 @@ import type {
 } from '../../core/interfaces/api'
 import { rentService } from '../../core/services/rent/rent.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 
 const emptyPaymentForm: CreateRentPaymentRequest = {
   scheduleId: 0,
@@ -21,6 +22,8 @@ export function RentCollectionPage() {
   const [payments, setPayments] = useState<RentPaymentModel[]>([])
   const [paymentForm, setPaymentForm] = useState<CreateRentPaymentRequest>(emptyPaymentForm)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isBoardExpanded, setIsBoardExpanded] = useState(true)
+  const [isPaymentsExpanded, setIsPaymentsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -160,59 +163,71 @@ export function RentCollectionPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Rent Chase Board</h4>
+            <CollapseToggleButton
+              isExpanded={isBoardExpanded}
+              onClick={() => setIsBoardExpanded((current) => !current)}
+              collapseLabel="Collapse rent chase board"
+              expandLabel="Expand rent chase board"
+            />
           </div>
 
-          {isLoading ? <p className="status-message">Loading rent schedules...</p> : null}
+          {isBoardExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading rent schedules...</p> : null}
 
-          <div className="dashboard-table-wrapper">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Tenant</th>
-                  <th>Property</th>
-                  <th>Status</th>
-                  <th>Due</th>
-                  <th>Balance</th>
-                  <th>Reminders</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedules.map((schedule) => (
-                  <tr key={schedule.scheduleId}>
-                    <td>{schedule.tenantName}</td>
-                    <td>
-                      {schedule.propertyName}
-                      <br />
-                      <span className="table-subtext">
-                        {schedule.addressLine1}
-                        {schedule.unitNumber ? `, ${schedule.unitNumber}` : ''}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-pill ${toStatusClass(schedule.scheduleStatus)}`}
-                      >
-                        {schedule.scheduleStatus}
-                      </span>
-                    </td>
-                    <td>{formatDate(schedule.dueDate)}</td>
-                    <td>{formatCurrency(schedule.balanceDue)}</td>
-                    <td>{schedule.reminderCount}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="secondary-button compact-button"
-                        onClick={() => void handleLogReminder(schedule)}
-                      >
-                        Log Reminder
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              <div className="dashboard-table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th>
+                      <th>Property</th>
+                      <th>Status</th>
+                      <th>Due</th>
+                      <th>Balance</th>
+                      <th>Reminders</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedules.map((schedule) => (
+                      <tr key={schedule.scheduleId}>
+                        <td>{schedule.tenantName}</td>
+                        <td>
+                          {schedule.propertyName}
+                          <br />
+                          <span className="table-subtext">
+                            {schedule.addressLine1}
+                            {schedule.unitNumber ? `, ${schedule.unitNumber}` : ''}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`status-pill ${toStatusClass(schedule.scheduleStatus)}`}
+                          >
+                            {schedule.scheduleStatus}
+                          </span>
+                        </td>
+                        <td>{formatDate(schedule.dueDate)}</td>
+                        <td>{formatCurrency(schedule.balanceDue)}</td>
+                        <td>{schedule.reminderCount}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="secondary-button compact-button"
+                            onClick={() => void handleLogReminder(schedule)}
+                          >
+                            Log Reminder
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="status-message">Rent chase board is collapsed.</p>
+          )}
         </section>
       </div>
 
@@ -222,39 +237,51 @@ export function RentCollectionPage() {
             <p className="eyebrow">Recent Payments</p>
             <h4>Payment activity</h4>
           </div>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={openCreateModal}
-            disabled={schedules.length === 0}
-          >
-            Add Payment
-          </button>
+          <div className="dashboard-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={openCreateModal}
+              disabled={schedules.length === 0}
+            >
+              Add Payment
+            </button>
+            <CollapseToggleButton
+              isExpanded={isPaymentsExpanded}
+              onClick={() => setIsPaymentsExpanded((current) => !current)}
+              collapseLabel="Collapse payment activity"
+              expandLabel="Expand payment activity"
+            />
+          </div>
         </div>
-        <div className="dashboard-table-wrapper">
-          <table className="dashboard-table">
-            <thead>
-              <tr>
-                <th>Tenant</th>
-                <th>Method</th>
-                <th>Amount</th>
-                <th>Date</th>
-                <th>Reference</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((payment) => (
-                <tr key={payment.paymentId}>
-                  <td>{payment.tenantName}</td>
-                  <td>{payment.paymentMethod}</td>
-                  <td>{formatCurrency(payment.amountPaid)}</td>
-                  <td>{formatDateTime(payment.paymentDate)}</td>
-                  <td>{payment.referenceNumber || 'N/A'}</td>
+        {isPaymentsExpanded ? (
+          <div className="dashboard-table-wrapper">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Tenant</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Reference</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.paymentId}>
+                    <td>{payment.tenantName}</td>
+                    <td>{payment.paymentMethod}</td>
+                    <td>{formatCurrency(payment.amountPaid)}</td>
+                    <td>{formatDateTime(payment.paymentDate)}</td>
+                    <td>{payment.referenceNumber || 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="status-message">Payment activity is collapsed.</p>
+        )}
       </section>
 
       <AppModal

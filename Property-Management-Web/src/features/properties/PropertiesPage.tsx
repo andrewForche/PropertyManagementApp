@@ -7,6 +7,7 @@ import type {
 } from '../../core/interfaces/api'
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 
 const emptyForm: CreatePropertyRequest = {
   propertyName: '',
@@ -21,6 +22,7 @@ export function PropertiesPage() {
   const [form, setForm] = useState<CreatePropertyRequest>(emptyForm)
   const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -145,67 +147,81 @@ export function PropertiesPage() {
         <section className="property-list-panel">
           <div className="property-list-header">
             <h4>Property Records</h4>
-            <button type="button" className="primary-button" onClick={openCreateModal}>
-              Add Property
-            </button>
+            <div className="dashboard-actions">
+              <button type="button" className="primary-button" onClick={openCreateModal}>
+                Add Property
+              </button>
+              <CollapseToggleButton
+                isExpanded={isRecordsExpanded}
+                onClick={() => setIsRecordsExpanded((current) => !current)}
+                collapseLabel="Collapse property records"
+                expandLabel="Expand property records"
+              />
+            </div>
           </div>
 
-          {errorMessage ? <p className="status-message error">{errorMessage}</p> : null}
-          {isLoading ? <p className="status-message">Loading properties...</p> : null}
+          {isRecordsExpanded ? (
+            <>
+              {errorMessage ? <p className="status-message error">{errorMessage}</p> : null}
+              {isLoading ? <p className="status-message">Loading properties...</p> : null}
 
-          {!isLoading && properties.length === 0 ? (
-            <p className="status-message">
-              No properties returned yet. If the API is running, try adding one.
-            </p>
-          ) : null}
+              {!isLoading && properties.length === 0 ? (
+                <p className="status-message">
+                  No properties returned yet. If the API is running, try adding one.
+                </p>
+              ) : null}
 
-          <div className="property-card-list">
-            {properties.map((property) => (
-              <article key={property.propertyId} className="property-card">
-                <div className="property-card-header">
-                  <div>
-                    <h5>{property.propertyName}</h5>
-                    <p>{property.addressLine1}</p>
-                  </div>
-                  <span className={`status-pill ${property.occupancyStatus}`}>
-                    {property.occupancyStatus}
-                  </span>
-                </div>
+              <div className="property-card-list">
+                {properties.map((property) => (
+                  <article key={property.propertyId} className="property-card">
+                    <div className="property-card-header">
+                      <div>
+                        <h5>{property.propertyName}</h5>
+                        <p>{property.addressLine1}</p>
+                      </div>
+                      <span className={`status-pill ${property.occupancyStatus}`}>
+                        {property.occupancyStatus}
+                      </span>
+                    </div>
 
-                <dl className="property-details">
-                  <div>
-                    <dt>Unit</dt>
-                    <dd>{property.unitNumber || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt>Rent</dt>
-                    <dd>{formatCurrency(property.monthlyRent)}</dd>
-                  </div>
-                  <div>
-                    <dt>Created</dt>
-                    <dd>{formatDate(property.createdAt)}</dd>
-                  </div>
-                </dl>
+                    <dl className="property-details">
+                      <div>
+                        <dt>Unit</dt>
+                        <dd>{property.unitNumber || 'N/A'}</dd>
+                      </div>
+                      <div>
+                        <dt>Rent</dt>
+                        <dd>{formatCurrency(property.monthlyRent)}</dd>
+                      </div>
+                      <div>
+                        <dt>Created</dt>
+                        <dd>{formatDate(property.createdAt)}</dd>
+                      </div>
+                    </dl>
 
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(property)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(property.propertyId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div className="property-card-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => handleEdit(property)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => void handleDelete(property.propertyId)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="status-message">Property records are collapsed.</p>
+          )}
         </section>
       </div>
 
