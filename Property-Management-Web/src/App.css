@@ -317,6 +317,16 @@
   font-size: 0.95rem;
 }
 
+.checkbox-field {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox-field input {
+  width: auto;
+}
+
 .property-form input,
 .property-form select {
   width: 100%;

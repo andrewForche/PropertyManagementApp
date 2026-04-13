@@ -26,6 +26,8 @@ builder.Services.AddScoped<IPropertyDataService, PropertyDataService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<ITenantDataService, TenantDataService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<IInvoiceDataService, InvoiceDataService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IRentCollectionDataService, RentCollectionDataService>();
 builder.Services.AddScoped<IRentCollectionService, RentCollectionService>();
 
