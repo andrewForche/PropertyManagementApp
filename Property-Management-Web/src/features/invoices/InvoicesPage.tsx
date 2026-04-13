@@ -180,8 +180,15 @@ export function InvoicesPage() {
       </section>
 
       <div className="single-panel-layout">
-        <section className="property-list-panel">
-          <div className="property-list-header">
+        <section
+          className={`property-list-panel collapsible-panel ${isRecordsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isRecordsExpanded) {
+              setIsRecordsExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Invoice Records</h4>
             <div className="dashboard-actions">
               <button
@@ -279,9 +286,7 @@ export function InvoicesPage() {
                 ))}
               </div>
             </>
-          ) : (
-            <p className="status-message">Invoice records are collapsed.</p>
-          )}
+          ) : null}
         </section>
       </div>
 

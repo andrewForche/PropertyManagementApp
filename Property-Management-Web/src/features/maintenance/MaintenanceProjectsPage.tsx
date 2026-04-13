@@ -293,8 +293,15 @@ export function MaintenanceProjectsPage() {
       </section>
 
       <div className="single-panel-layout">
-        <section className="property-list-panel">
-          <div className="property-list-header">
+        <section
+          className={`property-list-panel collapsible-panel ${isProjectsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isProjectsExpanded) {
+              setIsProjectsExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Project Records</h4>
             <div className="dashboard-actions">
               <button
@@ -393,14 +400,20 @@ export function MaintenanceProjectsPage() {
                 })}
               </div>
             </>
-          ) : (
-            <p className="status-message">Project records are collapsed.</p>
-          )}
+          ) : null}
         </section>
       </div>
 
-      <section className="dashboard-panel dashboard-panel-wide" ref={workLogsSectionRef}>
-          <div className="dashboard-panel-header">
+      <section
+        className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isWorkLogsExpanded ? '' : 'collapsed'}`}
+        ref={workLogsSectionRef}
+        onClick={() => {
+          if (!isWorkLogsExpanded) {
+            setIsWorkLogsExpanded(true)
+          }
+        }}
+      >
+          <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
             <div>
               <p className="eyebrow">Work Logs</p>
               <h4>Project activity</h4>
@@ -423,9 +436,7 @@ export function MaintenanceProjectsPage() {
             </div>
           </div>
 
-          {!isWorkLogsExpanded ? (
-            <p className="status-message">Work logs are collapsed.</p>
-          ) : selectedProjectId === null ? (
+          {isWorkLogsExpanded ? selectedProjectId === null ? (
             <p className="status-message">Select a maintenance project to view work logs.</p>
           ) : workLogs.length === 0 ? (
             <p className="status-message">No work logs yet for this project.</p>
@@ -454,7 +465,7 @@ export function MaintenanceProjectsPage() {
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
         </section>
 
       <AppModal

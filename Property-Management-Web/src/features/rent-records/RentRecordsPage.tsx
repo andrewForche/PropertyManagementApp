@@ -80,8 +80,15 @@ export function RentRecordsPage() {
       </section>
 
       <div className="dashboard-layout">
-        <section className="dashboard-panel dashboard-panel-wide">
-          <div className="dashboard-panel-header">
+        <section
+          className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isSchedulesExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isSchedulesExpanded) {
+              setIsSchedulesExpanded(true)
+            }
+          }}
+        >
+          <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
             <div>
               <p className="eyebrow">Ledger View</p>
               <h4>Scheduled rent records</h4>
@@ -144,13 +151,18 @@ export function RentRecordsPage() {
                 </table>
               </div>
             </>
-          ) : (
-            <p className="status-message">Scheduled rent records are collapsed.</p>
-          )}
+          ) : null}
         </section>
 
-        <section className="dashboard-panel dashboard-panel-wide">
-          <div className="dashboard-panel-header">
+        <section
+          className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isPaymentsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isPaymentsExpanded) {
+              setIsPaymentsExpanded(true)
+            }
+          }}
+        >
+          <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
             <div>
               <p className="eyebrow">Payment History</p>
               <h4>Recorded rent payments</h4>
@@ -196,9 +208,7 @@ export function RentRecordsPage() {
                 </table>
               </div>
             </>
-          ) : (
-            <p className="status-message">Recorded rent payments are collapsed.</p>
-          )}
+          ) : null}
         </section>
       </div>
     </article>

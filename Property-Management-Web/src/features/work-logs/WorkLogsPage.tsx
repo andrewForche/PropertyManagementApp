@@ -137,8 +137,15 @@ export function WorkLogsPage() {
       </section>
 
       <div className="single-panel-layout">
-        <section className="property-list-panel">
-          <div className="property-list-header">
+        <section
+          className={`property-list-panel collapsible-panel ${isRecordsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isRecordsExpanded) {
+              setIsRecordsExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Work Log Activity</h4>
             <div className="dashboard-actions">
               <select
@@ -226,9 +233,7 @@ export function WorkLogsPage() {
                 </table>
               </div>
             </>
-          ) : (
-            <p className="status-message">Work log activity is collapsed.</p>
-          )}
+          ) : null}
         </section>
       </div>
 

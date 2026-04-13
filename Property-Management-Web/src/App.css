@@ -438,6 +438,15 @@
   gap: 14px;
 }
 
+.collapsible-panel.collapsed {
+  cursor: pointer;
+}
+
+.collapsible-panel.collapsed:hover {
+  border-color: rgba(123, 152, 176, 0.36);
+  box-shadow: 0 10px 28px rgba(19, 40, 58, 0.08);
+}
+
 .property-card-list {
   display: grid;
   gap: 12px;

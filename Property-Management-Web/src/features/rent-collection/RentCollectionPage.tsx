@@ -160,8 +160,15 @@ export function RentCollectionPage() {
       </section>
 
       <div className="single-panel-layout">
-        <section className="property-list-panel">
-          <div className="property-list-header">
+        <section
+          className={`property-list-panel collapsible-panel ${isBoardExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isBoardExpanded) {
+              setIsBoardExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Rent Chase Board</h4>
             <CollapseToggleButton
               isExpanded={isBoardExpanded}
@@ -225,14 +232,19 @@ export function RentCollectionPage() {
                 </table>
               </div>
             </>
-          ) : (
-            <p className="status-message">Rent chase board is collapsed.</p>
-          )}
+          ) : null}
         </section>
       </div>
 
-      <section className="dashboard-panel dashboard-panel-wide">
-        <div className="dashboard-panel-header">
+      <section
+        className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isPaymentsExpanded ? '' : 'collapsed'}`}
+        onClick={() => {
+          if (!isPaymentsExpanded) {
+            setIsPaymentsExpanded(true)
+          }
+        }}
+      >
+        <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
           <div>
             <p className="eyebrow">Recent Payments</p>
             <h4>Payment activity</h4>
@@ -279,9 +291,7 @@ export function RentCollectionPage() {
               </tbody>
             </table>
           </div>
-        ) : (
-          <p className="status-message">Payment activity is collapsed.</p>
-        )}
+        ) : null}
       </section>
 
       <AppModal
