@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
+using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Models.Response;
 
@@ -181,11 +182,61 @@ public sealed class PropertyDataService : IPropertyDataService
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
+        if (await HasTenantDependenciesAsync(connection, propertyId, cancellationToken))
+        {
+            throw new DeleteConflictException(
+                "This property cannot be deleted because it still has one or more tenants assigned to it.");
+        }
+
+        if (await HasMaintenanceDependenciesAsync(connection, propertyId, cancellationToken))
+        {
+            throw new DeleteConflictException(
+                "This property cannot be deleted because it still has maintenance projects tied to it.");
+        }
+
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@PropertyId", propertyId);
 
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
+    }
+
+    private static async Task<bool> HasTenantDependenciesAsync(
+        MySqlConnection connection,
+        int propertyId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT EXISTS(
+                SELECT 1
+                FROM Tenants
+                WHERE PropertyId = @PropertyId
+            );
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@PropertyId", propertyId);
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
+    }
+
+    private static async Task<bool> HasMaintenanceDependenciesAsync(
+        MySqlConnection connection,
+        int propertyId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT EXISTS(
+                SELECT 1
+                FROM MaintenanceProjects
+                WHERE PropertyId = @PropertyId
+            );
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@PropertyId", propertyId);
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
     }
 
     private static void AddPropertyParameters(

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
+using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Models.Response;
 
@@ -136,11 +137,36 @@ public sealed class MaintenanceDataService : IMaintenanceDataService
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
+        if (await HasInvoiceDependenciesAsync(connection, projectId, cancellationToken))
+        {
+            throw new DeleteConflictException(
+                "This maintenance project cannot be deleted because invoice records are still tied to it.");
+        }
+
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@ProjectId", projectId);
 
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
+    }
+
+    private static async Task<bool> HasInvoiceDependenciesAsync(
+        MySqlConnection connection,
+        int projectId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT EXISTS(
+                SELECT 1
+                FROM Invoices
+                WHERE ProjectId = @ProjectId
+            );
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@ProjectId", projectId);
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
     }
 
     public async Task<IReadOnlyCollection<WorkLogResponse>> GetAllWorkLogsAsync(CancellationToken cancellationToken)
