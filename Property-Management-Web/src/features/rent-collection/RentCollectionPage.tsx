@@ -8,6 +8,7 @@ import type {
 import { rentService } from '../../core/services/rent/rent.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyPaymentForm: CreateRentPaymentRequest = {
   scheduleId: 0,
@@ -18,6 +19,7 @@ const emptyPaymentForm: CreateRentPaymentRequest = {
 }
 
 export function RentCollectionPage() {
+  const { showError, showSuccess } = useToast()
   const [schedules, setSchedules] = useState<RentScheduleModel[]>([])
   const [payments, setPayments] = useState<RentPaymentModel[]>([])
   const [paymentForm, setPaymentForm] = useState<CreateRentPaymentRequest>(emptyPaymentForm)
@@ -74,9 +76,12 @@ export function RentCollectionPage() {
         paymentDate: new Date().toISOString().slice(0, 16),
       })
       setIsModalOpen(false)
+      showSuccess('Payment recorded', 'The payment was logged successfully.')
       await loadRentCollection()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Payment request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -93,9 +98,12 @@ export function RentCollectionPage() {
     try {
       setErrorMessage(null)
       await rentService.updateSchedule(schedule.scheduleId, payload)
+      showSuccess('Reminder logged', 'The rent reminder count was updated.')
       await loadRentCollection()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Reminder update failed', message)
     }
   }
 

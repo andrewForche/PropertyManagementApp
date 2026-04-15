@@ -10,6 +10,7 @@ import { propertyService } from '../../core/services/properties/property.service
 import { tenantService } from '../../core/services/tenants/tenant.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyForm: CreateTenantRequest = {
   firstName: '',
@@ -23,6 +24,7 @@ const emptyForm: CreateTenantRequest = {
 }
 
 export function TenantsPage() {
+  const { showError, showSuccess } = useToast()
   const [tenants, setTenants] = useState<TenantModel[]>([])
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [form, setForm] = useState<CreateTenantRequest>(emptyForm)
@@ -74,16 +76,20 @@ export function TenantsPage() {
 
       if (editingTenantId === null) {
         await tenantService.create(payload)
+        showSuccess('Tenant created', 'The tenant record was added successfully.')
       } else {
         const updatePayload: UpdateTenantRequest = { ...payload }
         await tenantService.update(editingTenantId, updatePayload)
+        showSuccess('Tenant updated', 'The tenant changes were saved.')
       }
 
       resetForm()
       setIsModalOpen(false)
       await loadTenantModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Tenant request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -116,6 +122,7 @@ export function TenantsPage() {
     try {
       setErrorMessage(null)
       await tenantService.delete(tenantId)
+      showSuccess('Tenant deleted', 'The tenant record was removed.')
 
       if (editingTenantId === tenantId) {
         resetForm()
@@ -123,7 +130,9 @@ export function TenantsPage() {
 
       await loadTenantModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Tenant delete failed', message)
     }
   }
 

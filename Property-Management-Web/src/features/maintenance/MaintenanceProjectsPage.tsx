@@ -12,6 +12,7 @@ import { maintenanceService } from '../../core/services/maintenance/maintenance.
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyProjectForm: CreateMaintenanceProjectRequest = {
   propertyId: 0,
@@ -31,6 +32,7 @@ const emptyWorkLogForm: CreateWorkLogRequest = {
 }
 
 export function MaintenanceProjectsPage() {
+  const { showError, showSuccess } = useToast()
   const [projects, setProjects] = useState<MaintenanceProjectModel[]>([])
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [workLogs, setWorkLogs] = useState<WorkLogModel[]>([])
@@ -118,9 +120,11 @@ export function MaintenanceProjectsPage() {
         const createdProject = await maintenanceService.createProject(payload)
         nextSelectedProjectId = createdProject.projectId
         setSelectedProjectId(createdProject.projectId)
+        showSuccess('Project created', 'The maintenance project was added successfully.')
       } else {
         await maintenanceService.updateProject(editingProjectId, payload as UpdateMaintenanceProjectRequest)
         nextSelectedProjectId = editingProjectId
+        showSuccess('Project updated', 'The maintenance project changes were saved.')
       }
 
       resetProjectForm()
@@ -130,7 +134,9 @@ export function MaintenanceProjectsPage() {
         await selectProject(nextSelectedProjectId)
       }
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Project request failed', message)
     } finally {
       setIsSavingProject(false)
     }
@@ -155,10 +161,13 @@ export function MaintenanceProjectsPage() {
         clockInTime: new Date().toISOString().slice(0, 16),
       })
       setIsWorkLogModalOpen(false)
+      showSuccess('Work log added', 'The work log entry was recorded successfully.')
       await loadMaintenanceModule()
       await selectProject(createWorkLogProjectId)
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Work log request failed', message)
     } finally {
       setIsSavingWorkLog(false)
     }
@@ -189,6 +198,7 @@ export function MaintenanceProjectsPage() {
     try {
       setErrorMessage(null)
       await maintenanceService.deleteProject(projectId)
+      showSuccess('Project deleted', 'The maintenance project was removed.')
 
       if (editingProjectId === projectId) {
         resetProjectForm()
@@ -205,7 +215,9 @@ export function MaintenanceProjectsPage() {
         }
       }
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Project delete failed', message)
     }
   }
 

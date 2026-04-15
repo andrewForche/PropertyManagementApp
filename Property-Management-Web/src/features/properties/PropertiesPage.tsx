@@ -8,6 +8,7 @@ import type {
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyForm: CreatePropertyRequest = {
   propertyName: '',
@@ -18,6 +19,7 @@ const emptyForm: CreatePropertyRequest = {
 }
 
 export function PropertiesPage() {
+  const { showError, showSuccess } = useToast()
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [form, setForm] = useState<CreatePropertyRequest>(emptyForm)
   const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null)
@@ -53,16 +55,20 @@ export function PropertiesPage() {
 
       if (editingPropertyId === null) {
         await propertyService.create(form)
+        showSuccess('Property created', 'The property record was added successfully.')
       } else {
         const payload: UpdatePropertyRequest = { ...form }
         await propertyService.update(editingPropertyId, payload)
+        showSuccess('Property updated', 'The property changes were saved.')
       }
 
       resetForm()
       setIsModalOpen(false)
       await loadProperties()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Property request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -92,6 +98,7 @@ export function PropertiesPage() {
     try {
       setErrorMessage(null)
       await propertyService.delete(propertyId)
+      showSuccess('Property deleted', 'The property record was removed.')
 
       if (editingPropertyId === propertyId) {
         resetForm()
@@ -99,7 +106,9 @@ export function PropertiesPage() {
 
       await loadProperties()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Property delete failed', message)
     }
   }
 

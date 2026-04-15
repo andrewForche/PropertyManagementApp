@@ -50,7 +50,7 @@ export class ApiClient {
     if (!response.ok) {
       const errorText = await response.text()
       throw new Error(
-        errorText || `Request failed with status ${response.status}.`,
+        getApiErrorMessage(errorText, response.status),
       )
     }
 
@@ -63,3 +63,20 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+
+function getApiErrorMessage(errorText: string, status: number) {
+  if (!errorText) {
+    return `Request failed with status ${status}.`
+  }
+
+  try {
+    const parsed = JSON.parse(errorText) as { message?: string }
+    if (parsed.message) {
+      return parsed.message
+    }
+  } catch {
+    return errorText
+  }
+
+  return errorText
+}

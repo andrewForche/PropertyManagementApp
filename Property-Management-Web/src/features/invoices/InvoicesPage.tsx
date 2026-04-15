@@ -9,6 +9,7 @@ import type {
 import { invoiceService } from '../../core/services/invoices/invoice.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyForm: CreateInvoiceRequest = {
   projectId: 0,
@@ -20,6 +21,7 @@ const emptyForm: CreateInvoiceRequest = {
 }
 
 export function InvoicesPage() {
+  const { showError, showSuccess } = useToast()
   const [invoices, setInvoices] = useState<InvoiceModel[]>([])
   const [projectOptions, setProjectOptions] = useState<InvoiceProjectOptionModel[]>([])
   const [form, setForm] = useState<CreateInvoiceRequest>(emptyForm)
@@ -71,16 +73,20 @@ export function InvoicesPage() {
 
       if (editingInvoiceId === null) {
         await invoiceService.create(payload)
+        showSuccess('Invoice created', 'The invoice record was added successfully.')
       } else {
         const updatePayload: UpdateInvoiceRequest = { ...payload }
         await invoiceService.update(editingInvoiceId, updatePayload)
+        showSuccess('Invoice updated', 'The invoice changes were saved.')
       }
 
       resetForm()
       setIsModalOpen(false)
       await loadInvoicesModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Invoice request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -111,6 +117,7 @@ export function InvoicesPage() {
     try {
       setErrorMessage(null)
       await invoiceService.delete(invoiceId)
+      showSuccess('Invoice deleted', 'The invoice record was removed.')
 
       if (editingInvoiceId === invoiceId) {
         resetForm()
@@ -118,7 +125,9 @@ export function InvoicesPage() {
 
       await loadInvoicesModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Invoice delete failed', message)
     }
   }
 

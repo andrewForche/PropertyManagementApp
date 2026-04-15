@@ -7,6 +7,7 @@ import type {
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyWorkLogForm: CreateWorkLogRequest = {
   clockInTime: new Date().toISOString().slice(0, 16),
@@ -17,6 +18,7 @@ const emptyWorkLogForm: CreateWorkLogRequest = {
 }
 
 export function WorkLogsPage() {
+  const { showError, showSuccess } = useToast()
   const [workLogs, setWorkLogs] = useState<WorkLogModel[]>([])
   const [projects, setProjects] = useState<MaintenanceProjectModel[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<number>(0)
@@ -69,9 +71,12 @@ export function WorkLogsPage() {
         clockInTime: new Date().toISOString().slice(0, 16),
       })
       setIsModalOpen(false)
+      showSuccess('Work log created', 'The work log entry was added successfully.')
       await loadWorkLogsModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Work log request failed', message)
     } finally {
       setIsSaving(false)
     }
