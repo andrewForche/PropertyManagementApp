@@ -7,6 +7,7 @@ import type {
 } from '../../core/interfaces/api'
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -23,6 +24,7 @@ export function PropertiesPage() {
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [form, setForm] = useState<CreatePropertyRequest>(emptyForm)
   const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null)
+  const [pendingDeletePropertyId, setPendingDeletePropertyId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -87,17 +89,10 @@ export function PropertiesPage() {
   }
 
   async function handleDelete(propertyId: number) {
-    const confirmed = window.confirm(
-      'Delete this property record? This cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     try {
       setErrorMessage(null)
       await propertyService.delete(propertyId)
+      setPendingDeletePropertyId(null)
       showSuccess('Property deleted', 'The property record was removed.')
 
       if (editingPropertyId === propertyId) {
@@ -125,6 +120,14 @@ export function PropertiesPage() {
   function closeModal() {
     setIsModalOpen(false)
     resetForm()
+  }
+
+  function openDeleteConfirmation(propertyId: number) {
+    setPendingDeletePropertyId(propertyId)
+  }
+
+  function closeDeleteConfirmation() {
+    setPendingDeletePropertyId(null)
   }
 
   return (
@@ -226,7 +229,7 @@ export function PropertiesPage() {
                       <button
                         type="button"
                         className="danger-button"
-                        onClick={() => void handleDelete(property.propertyId)}
+                        onClick={() => openDeleteConfirmation(property.propertyId)}
                       >
                         Delete
                       </button>
@@ -329,6 +332,20 @@ export function PropertiesPage() {
           </button>
         </form>
       </AppModal>
+
+      <ConfirmationModal
+        title="Delete Property"
+        message="Delete this property record? This action cannot be undone."
+        confirmLabel="Delete Property"
+        isOpen={pendingDeletePropertyId !== null}
+        isConfirming={isSaving}
+        onCancel={closeDeleteConfirmation}
+        onConfirm={() => {
+          if (pendingDeletePropertyId !== null) {
+            void handleDelete(pendingDeletePropertyId)
+          }
+        }}
+      />
     </article>
   )
 }

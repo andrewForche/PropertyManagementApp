@@ -8,6 +8,7 @@ import type {
 } from '../../core/interfaces/api'
 import { invoiceService } from '../../core/services/invoices/invoice.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -26,6 +27,7 @@ export function InvoicesPage() {
   const [projectOptions, setProjectOptions] = useState<InvoiceProjectOptionModel[]>([])
   const [form, setForm] = useState<CreateInvoiceRequest>(emptyForm)
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null)
+  const [pendingDeleteInvoiceId, setPendingDeleteInvoiceId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -106,17 +108,10 @@ export function InvoicesPage() {
   }
 
   async function handleDelete(invoiceId: number) {
-    const confirmed = window.confirm(
-      'Delete this invoice record? This cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     try {
       setErrorMessage(null)
       await invoiceService.delete(invoiceId)
+      setPendingDeleteInvoiceId(null)
       showSuccess('Invoice deleted', 'The invoice record was removed.')
 
       if (editingInvoiceId === invoiceId) {
@@ -147,6 +142,14 @@ export function InvoicesPage() {
   function closeModal() {
     setIsModalOpen(false)
     resetForm()
+  }
+
+  function openDeleteConfirmation(invoiceId: number) {
+    setPendingDeleteInvoiceId(invoiceId)
+  }
+
+  function closeDeleteConfirmation() {
+    setPendingDeleteInvoiceId(null)
   }
 
   const totalBilled = invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0)
@@ -286,7 +289,7 @@ export function InvoicesPage() {
                       <button
                         type="button"
                         className="danger-button"
-                        onClick={() => void handleDelete(invoice.invoiceId)}
+                        onClick={() => openDeleteConfirmation(invoice.invoiceId)}
                       >
                         Delete
                       </button>
@@ -415,6 +418,19 @@ export function InvoicesPage() {
           </button>
         </form>
       </AppModal>
+
+      <ConfirmationModal
+        title="Delete Invoice"
+        message="Delete this invoice record? This action cannot be undone."
+        confirmLabel="Delete Invoice"
+        isOpen={pendingDeleteInvoiceId !== null}
+        onCancel={closeDeleteConfirmation}
+        onConfirm={() => {
+          if (pendingDeleteInvoiceId !== null) {
+            void handleDelete(pendingDeleteInvoiceId)
+          }
+        }}
+      />
     </article>
   )
 }

@@ -48,11 +48,19 @@ export function AppModal({ title, isOpen, onClose, children }: AppModalProps) {
           <h4>{title}</h4>
           <button
             type="button"
-            className="secondary-button app-modal-close"
+            className="app-modal-close"
             onClick={onClose}
             aria-label={`Close ${title}`}
           >
-            Close
+            <svg viewBox="0 0 24 24" className="modal-close-icon" aria-hidden="true">
+              <path
+                d="M6 6L18 18M18 6L6 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
         </div>
         <div className="app-modal-body">{children}</div>

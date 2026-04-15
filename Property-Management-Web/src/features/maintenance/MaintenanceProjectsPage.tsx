@@ -11,6 +11,7 @@ import type {
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -42,6 +43,7 @@ export function MaintenanceProjectsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const [createWorkLogProjectId, setCreateWorkLogProjectId] = useState<number>(0)
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null)
+  const [pendingDeleteProjectId, setPendingDeleteProjectId] = useState<number | null>(null)
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false)
   const [isWorkLogModalOpen, setIsWorkLogModalOpen] = useState(false)
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(true)
@@ -187,17 +189,10 @@ export function MaintenanceProjectsPage() {
   }
 
   async function handleDelete(projectId: number) {
-    const confirmed = window.confirm(
-      'Delete this maintenance project? Linked work logs will also be removed.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     try {
       setErrorMessage(null)
       await maintenanceService.deleteProject(projectId)
+      setPendingDeleteProjectId(null)
       showSuccess('Project deleted', 'The maintenance project was removed.')
 
       if (editingProjectId === projectId) {
@@ -251,6 +246,14 @@ export function MaintenanceProjectsPage() {
       clockInTime: new Date().toISOString().slice(0, 16),
     })
     setCreateWorkLogProjectId(selectedProjectId ?? projects[0]?.projectId ?? 0)
+  }
+
+  function openDeleteConfirmation(projectId: number) {
+    setPendingDeleteProjectId(projectId)
+  }
+
+  function closeDeleteConfirmation() {
+    setPendingDeleteProjectId(null)
   }
 
   async function handleViewLogs(projectId: number) {
@@ -402,7 +405,7 @@ export function MaintenanceProjectsPage() {
                         <button
                           type="button"
                           className="danger-button"
-                          onClick={() => void handleDelete(project.projectId)}
+                          onClick={() => openDeleteConfirmation(project.projectId)}
                         >
                           Delete
                         </button>
@@ -694,6 +697,19 @@ export function MaintenanceProjectsPage() {
           </button>
         </form>
       </AppModal>
+
+      <ConfirmationModal
+        title="Delete Maintenance Project"
+        message="Delete this maintenance project? Linked work logs will also be removed."
+        confirmLabel="Delete Project"
+        isOpen={pendingDeleteProjectId !== null}
+        onCancel={closeDeleteConfirmation}
+        onConfirm={() => {
+          if (pendingDeleteProjectId !== null) {
+            void handleDelete(pendingDeleteProjectId)
+          }
+        }}
+      />
     </article>
   )
 }

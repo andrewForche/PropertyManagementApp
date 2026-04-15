@@ -9,6 +9,7 @@ import type {
 import { propertyService } from '../../core/services/properties/property.service'
 import { tenantService } from '../../core/services/tenants/tenant.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -29,6 +30,7 @@ export function TenantsPage() {
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [form, setForm] = useState<CreateTenantRequest>(emptyForm)
   const [editingTenantId, setEditingTenantId] = useState<number | null>(null)
+  const [pendingDeleteTenantId, setPendingDeleteTenantId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -111,17 +113,10 @@ export function TenantsPage() {
   }
 
   async function handleDelete(tenantId: number) {
-    const confirmed = window.confirm(
-      'Delete this tenant record? This cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     try {
       setErrorMessage(null)
       await tenantService.delete(tenantId)
+      setPendingDeleteTenantId(null)
       showSuccess('Tenant deleted', 'The tenant record was removed.')
 
       if (editingTenantId === tenantId) {
@@ -152,6 +147,14 @@ export function TenantsPage() {
   function closeModal() {
     setIsModalOpen(false)
     resetForm()
+  }
+
+  function openDeleteConfirmation(tenantId: number) {
+    setPendingDeleteTenantId(tenantId)
+  }
+
+  function closeDeleteConfirmation() {
+    setPendingDeleteTenantId(null)
   }
 
   const activeCount = tenants.filter((tenant) => tenant.tenantStatus === 'active').length
@@ -291,7 +294,7 @@ export function TenantsPage() {
                       <button
                         type="button"
                         className="danger-button"
-                        onClick={() => void handleDelete(tenant.tenantId)}
+                        onClick={() => openDeleteConfirmation(tenant.tenantId)}
                       >
                         Delete
                       </button>
@@ -447,6 +450,19 @@ export function TenantsPage() {
           </button>
         </form>
       </AppModal>
+
+      <ConfirmationModal
+        title="Delete Tenant"
+        message="Delete this tenant record? This action cannot be undone."
+        confirmLabel="Delete Tenant"
+        isOpen={pendingDeleteTenantId !== null}
+        onCancel={closeDeleteConfirmation}
+        onConfirm={() => {
+          if (pendingDeleteTenantId !== null) {
+            void handleDelete(pendingDeleteTenantId)
+          }
+        }}
+      />
     </article>
   )
 }
