@@ -58,10 +58,6 @@ export function AppShell() {
         <div className="brand-block">
           <p className="eyebrow">Property Management App</p>
           <h1>Operations workspace</h1>
-          <p className="lead">
-            Daily workflows now live in dedicated modules so the dashboard can stay
-            focused on portfolio visibility instead of acting like a debug wall.
-          </p>
         </div>
 
         <nav aria-label="Primary">
