@@ -6,6 +6,10 @@ import type {
   UpdatePropertyRequest,
 } from '../../core/interfaces/api'
 import { propertyService } from '../../core/services/properties/property.service'
+import { AppModal } from '../../shared/ui/AppModal'
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyForm: CreatePropertyRequest = {
   propertyName: '',
@@ -16,9 +20,13 @@ const emptyForm: CreatePropertyRequest = {
 }
 
 export function PropertiesPage() {
+  const { showError, showSuccess } = useToast()
   const [properties, setProperties] = useState<PropertyModel[]>([])
   const [form, setForm] = useState<CreatePropertyRequest>(emptyForm)
   const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null)
+  const [pendingDeletePropertyId, setPendingDeletePropertyId] = useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -49,15 +57,20 @@ export function PropertiesPage() {
 
       if (editingPropertyId === null) {
         await propertyService.create(form)
+        showSuccess('Property created', 'The property record was added successfully.')
       } else {
         const payload: UpdatePropertyRequest = { ...form }
         await propertyService.update(editingPropertyId, payload)
+        showSuccess('Property updated', 'The property changes were saved.')
       }
 
       resetForm()
+      setIsModalOpen(false)
       await loadProperties()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Property request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -72,20 +85,15 @@ export function PropertiesPage() {
       monthlyRent: property.monthlyRent,
       occupancyStatus: property.occupancyStatus,
     })
+    setIsModalOpen(true)
   }
 
   async function handleDelete(propertyId: number) {
-    const confirmed = window.confirm(
-      'Delete this property record? This cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     try {
       setErrorMessage(null)
       await propertyService.delete(propertyId)
+      setPendingDeletePropertyId(null)
+      showSuccess('Property deleted', 'The property record was removed.')
 
       if (editingPropertyId === propertyId) {
         resetForm()
@@ -93,7 +101,9 @@ export function PropertiesPage() {
 
       await loadProperties()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Property delete failed', message)
     }
   }
 
@@ -102,14 +112,42 @@ export function PropertiesPage() {
     setForm({ ...emptyForm })
   }
 
+  function openCreateModal() {
+    resetForm()
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    resetForm()
+  }
+
+  function openDeleteConfirmation(propertyId: number) {
+    setPendingDeletePropertyId(propertyId)
+  }
+
+  function closeDeleteConfirmation() {
+    setPendingDeletePropertyId(null)
+  }
+
   return (
     <article className="page-section properties-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Portfolio</p>
           <h3>Properties</h3>
         </div>
-        <code>/api/properties</code>
+        <div className="dashboard-actions">
+          <span className="module-chip">Property Administration</span>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void loadProperties()}
+            disabled={isLoading}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       <p>
@@ -117,21 +155,99 @@ export function PropertiesPage() {
         update, and delete property records from the React frontend.
       </p>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleSubmit}>
-          <div className="property-form-header">
-            <h4>{editingPropertyId === null ? 'Add Property' : 'Edit Property'}</h4>
-            {editingPropertyId !== null ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
-              >
-                Cancel Edit
+      <div className="single-panel-layout">
+        <section
+          className={`property-list-panel collapsible-panel ${isRecordsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isRecordsExpanded) {
+              setIsRecordsExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
+            <h4>Property Records</h4>
+            <div className="dashboard-actions">
+              <button type="button" className="primary-button" onClick={openCreateModal}>
+                Add Property
               </button>
-            ) : null}
+              <CollapseToggleButton
+                isExpanded={isRecordsExpanded}
+                onClick={() => setIsRecordsExpanded((current) => !current)}
+                collapseLabel="Collapse property records"
+                expandLabel="Expand property records"
+              />
+            </div>
           </div>
 
+          {isRecordsExpanded ? (
+            <>
+              {errorMessage ? <p className="status-message error">{errorMessage}</p> : null}
+              {isLoading ? <p className="status-message">Loading properties...</p> : null}
+
+              {!isLoading && properties.length === 0 ? (
+                <p className="status-message">
+                  No properties returned yet. If the API is running, try adding one.
+                </p>
+              ) : null}
+
+              <div className="property-card-list">
+                {properties.map((property) => (
+                  <article key={property.propertyId} className="property-card">
+                    <div className="property-card-header">
+                      <div>
+                        <h5>{property.propertyName}</h5>
+                        <p>{property.addressLine1}</p>
+                      </div>
+                      <span className={`status-pill ${property.occupancyStatus}`}>
+                        {property.occupancyStatus}
+                      </span>
+                    </div>
+
+                    <dl className="property-details">
+                      <div>
+                        <dt>Unit</dt>
+                        <dd>{property.unitNumber || 'N/A'}</dd>
+                      </div>
+                      <div>
+                        <dt>Rent</dt>
+                        <dd>{formatCurrency(property.monthlyRent)}</dd>
+                      </div>
+                      <div>
+                        <dt>Created</dt>
+                        <dd>{formatDate(property.createdAt)}</dd>
+                      </div>
+                    </dl>
+
+                    <div className="property-card-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => handleEdit(property)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => openDeleteConfirmation(property.propertyId)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      </div>
+
+      <AppModal
+        title={editingPropertyId === null ? 'Add Property' : 'Edit Property'}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleSubmit}>
           <label>
             Property Name
             <input
@@ -215,78 +331,21 @@ export function PropertiesPage() {
                 : 'Save Changes'}
           </button>
         </form>
+      </AppModal>
 
-        <section className="property-list-panel">
-          <div className="property-list-header">
-            <h4>Property Records</h4>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void loadProperties()}
-              disabled={isLoading}
-            >
-              Refresh
-            </button>
-          </div>
-
-          {errorMessage ? <p className="status-message error">{errorMessage}</p> : null}
-          {isLoading ? <p className="status-message">Loading properties...</p> : null}
-
-          {!isLoading && properties.length === 0 ? (
-            <p className="status-message">
-              No properties returned yet. If the API is running, try adding one.
-            </p>
-          ) : null}
-
-          <div className="property-card-list">
-            {properties.map((property) => (
-              <article key={property.propertyId} className="property-card">
-                <div className="property-card-header">
-                  <div>
-                    <h5>{property.propertyName}</h5>
-                    <p>{property.addressLine1}</p>
-                  </div>
-                  <span className={`status-pill ${property.occupancyStatus}`}>
-                    {property.occupancyStatus}
-                  </span>
-                </div>
-
-                <dl className="property-details">
-                  <div>
-                    <dt>Unit</dt>
-                    <dd>{property.unitNumber || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt>Rent</dt>
-                    <dd>{formatCurrency(property.monthlyRent)}</dd>
-                  </div>
-                  <div>
-                    <dt>Created</dt>
-                    <dd>{formatDate(property.createdAt)}</dd>
-                  </div>
-                </dl>
-
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(property)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(property.propertyId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
+      <ConfirmationModal
+        title="Delete Property"
+        message="Delete this property record? This action cannot be undone."
+        confirmLabel="Delete Property"
+        isOpen={pendingDeletePropertyId !== null}
+        isConfirming={isSaving}
+        onCancel={closeDeleteConfirmation}
+        onConfirm={() => {
+          if (pendingDeletePropertyId !== null) {
+            void handleDelete(pendingDeletePropertyId)
+          }
+        }}
+      />
     </article>
   )
 }

@@ -1,10 +1,10 @@
 :root {
   font-family:
-    'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif;
+    'Segoe UI Variable Text', 'Aptos', 'Segoe UI', 'Trebuchet MS', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #2d241a;
-  background: #efe6d7;
+  color: #22313d;
+  background: #eef3f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -47,14 +47,14 @@ dl {
 h1,
 h2,
 h3 {
-  font-family: Georgia, 'Times New Roman', serif;
-  letter-spacing: -0.02em;
-  color: #fff8ef;
+  font-family: 'Segoe UI Variable Display', 'Aptos Display', 'Segoe UI', sans-serif;
+  letter-spacing: -0.03em;
+  color: #f8fbff;
 }
 
 h2,
 h3 {
-  color: #173a38;
+  color: #183247;
 }
 
 #root {

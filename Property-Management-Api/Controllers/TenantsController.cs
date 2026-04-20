@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Services;
 
@@ -63,13 +64,20 @@ public class TenantsController : ControllerBase
     [HttpDelete("{tenantId:int}")]
     public async Task<IActionResult> Delete(int tenantId, CancellationToken cancellationToken)
     {
-        var deleted = await _tenantService.DeleteAsync(tenantId, cancellationToken);
-
-        if (!deleted)
+        try
         {
-            return NotFound();
-        }
+            var deleted = await _tenantService.DeleteAsync(tenantId, cancellationToken);
 
-        return NoContent();
+            if (!deleted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+        catch (DeleteConflictException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
     }
 }

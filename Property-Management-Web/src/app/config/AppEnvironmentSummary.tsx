@@ -1,21 +1,25 @@
 import { appEnvironment } from './env'
 
 export function AppEnvironmentSummary() {
+  const connectionLabel = appEnvironment.apiBaseUrl.includes('localhost')
+    ? 'Local API'
+    : 'Remote API'
+
   return (
     <section className="environment-card" aria-label="Environment configuration">
-      <p className="eyebrow">Environment</p>
+      <p className="eyebrow">Workspace</p>
       <dl className="environment-list">
         <div>
-          <dt>App</dt>
+          <dt>Application</dt>
           <dd>{appEnvironment.appName}</dd>
         </div>
         <div>
-          <dt>Mode</dt>
+          <dt>Environment</dt>
           <dd>{appEnvironment.appStage}</dd>
         </div>
         <div>
-          <dt>API Base URL</dt>
-          <dd>{appEnvironment.apiBaseUrl}</dd>
+          <dt>Connection</dt>
+          <dd>{connectionLabel}</dd>
         </div>
       </dl>
     </section>

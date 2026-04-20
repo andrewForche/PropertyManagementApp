@@ -6,6 +6,9 @@ import type {
   UpdateRentScheduleRequest,
 } from '../../core/interfaces/api'
 import { rentService } from '../../core/services/rent/rent.service'
+import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyPaymentForm: CreateRentPaymentRequest = {
   scheduleId: 0,
@@ -16,9 +19,13 @@ const emptyPaymentForm: CreateRentPaymentRequest = {
 }
 
 export function RentCollectionPage() {
+  const { showError, showSuccess } = useToast()
   const [schedules, setSchedules] = useState<RentScheduleModel[]>([])
   const [payments, setPayments] = useState<RentPaymentModel[]>([])
   const [paymentForm, setPaymentForm] = useState<CreateRentPaymentRequest>(emptyPaymentForm)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isBoardExpanded, setIsBoardExpanded] = useState(true)
+  const [isPaymentsExpanded, setIsPaymentsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -68,9 +75,13 @@ export function RentCollectionPage() {
         scheduleId: paymentForm.scheduleId,
         paymentDate: new Date().toISOString().slice(0, 16),
       })
+      setIsModalOpen(false)
+      showSuccess('Payment recorded', 'The payment was logged successfully.')
       await loadRentCollection()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Payment request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -87,9 +98,12 @@ export function RentCollectionPage() {
     try {
       setErrorMessage(null)
       await rentService.updateSchedule(schedule.scheduleId, payload)
+      showSuccess('Reminder logged', 'The rent reminder count was updated.')
       await loadRentCollection()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Reminder update failed', message)
     }
   }
 
@@ -105,15 +119,28 @@ export function RentCollectionPage() {
     (schedule) => schedule.scheduleStatus === 'Partial',
   ).length
 
+  function openCreateModal() {
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    setPaymentForm((current) => ({
+      ...emptyPaymentForm,
+      scheduleId: current.scheduleId || schedules[0]?.scheduleId || 0,
+      paymentDate: new Date().toISOString().slice(0, 16),
+    }))
+  }
+
   return (
     <article className="page-section rent-collection-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Collections</p>
           <h3>Rent Collection</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/rent-schedules</code>
+          <span className="module-chip">Collections Workspace</span>
           <button
             type="button"
             className="secondary-button"
@@ -140,12 +167,147 @@ export function RentCollectionPage() {
         <DashboardMetric label="Payments Logged" value={String(payments.length)} tone="success" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleRecordPayment}>
-          <div className="property-form-header">
-            <h4>Record Payment</h4>
+      <div className="single-panel-layout">
+        <section
+          className={`property-list-panel collapsible-panel ${isBoardExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isBoardExpanded) {
+              setIsBoardExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
+            <h4>Rent Chase Board</h4>
+            <CollapseToggleButton
+              isExpanded={isBoardExpanded}
+              onClick={() => setIsBoardExpanded((current) => !current)}
+              collapseLabel="Collapse rent chase board"
+              expandLabel="Expand rent chase board"
+            />
           </div>
 
+          {isBoardExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading rent schedules...</p> : null}
+
+              <div className="dashboard-table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th>
+                      <th>Property</th>
+                      <th>Status</th>
+                      <th>Due</th>
+                      <th>Balance</th>
+                      <th>Reminders</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedules.map((schedule) => (
+                      <tr key={schedule.scheduleId}>
+                        <td>{schedule.tenantName}</td>
+                        <td>
+                          {schedule.propertyName}
+                          <br />
+                          <span className="table-subtext">
+                            {schedule.addressLine1}
+                            {schedule.unitNumber ? `, ${schedule.unitNumber}` : ''}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`status-pill ${toStatusClass(schedule.scheduleStatus)}`}
+                          >
+                            {schedule.scheduleStatus}
+                          </span>
+                        </td>
+                        <td>{formatDate(schedule.dueDate)}</td>
+                        <td>{formatCurrency(schedule.balanceDue)}</td>
+                        <td>{schedule.reminderCount}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="secondary-button compact-button"
+                            onClick={() => void handleLogReminder(schedule)}
+                          >
+                            Log Reminder
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : null}
+        </section>
+      </div>
+
+      <section
+        className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isPaymentsExpanded ? '' : 'collapsed'}`}
+        onClick={() => {
+          if (!isPaymentsExpanded) {
+            setIsPaymentsExpanded(true)
+          }
+        }}
+      >
+        <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
+          <div>
+            <p className="eyebrow">Recent Payments</p>
+            <h4>Payment activity</h4>
+          </div>
+          <div className="dashboard-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={openCreateModal}
+              disabled={schedules.length === 0}
+            >
+              Add Payment
+            </button>
+            <CollapseToggleButton
+              isExpanded={isPaymentsExpanded}
+              onClick={() => setIsPaymentsExpanded((current) => !current)}
+              collapseLabel="Collapse payment activity"
+              expandLabel="Expand payment activity"
+            />
+          </div>
+        </div>
+        {isPaymentsExpanded ? (
+          <div className="dashboard-table-wrapper">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Tenant</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.paymentId}>
+                    <td>{payment.tenantName}</td>
+                    <td>{payment.paymentMethod}</td>
+                    <td>{formatCurrency(payment.amountPaid)}</td>
+                    <td>{formatDateTime(payment.paymentDate)}</td>
+                    <td>{payment.referenceNumber || 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+
+      <AppModal
+        title="Record Payment"
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleRecordPayment}>
           <label>
             Rent Schedule
             <select
@@ -232,98 +394,7 @@ export function RentCollectionPage() {
             {isSaving ? 'Recording...' : 'Record Payment'}
           </button>
         </form>
-
-        <section className="property-list-panel">
-          <div className="property-list-header">
-            <h4>Rent Chase Board</h4>
-          </div>
-
-          {isLoading ? <p className="status-message">Loading rent schedules...</p> : null}
-
-          <div className="dashboard-table-wrapper">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Tenant</th>
-                  <th>Property</th>
-                  <th>Status</th>
-                  <th>Due</th>
-                  <th>Balance</th>
-                  <th>Reminders</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedules.map((schedule) => (
-                  <tr key={schedule.scheduleId}>
-                    <td>{schedule.tenantName}</td>
-                    <td>
-                      {schedule.propertyName}
-                      <br />
-                      <span className="table-subtext">
-                        {schedule.addressLine1}
-                        {schedule.unitNumber ? `, ${schedule.unitNumber}` : ''}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-pill ${toStatusClass(schedule.scheduleStatus)}`}
-                      >
-                        {schedule.scheduleStatus}
-                      </span>
-                    </td>
-                    <td>{formatDate(schedule.dueDate)}</td>
-                    <td>{formatCurrency(schedule.balanceDue)}</td>
-                    <td>{schedule.reminderCount}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="secondary-button compact-button"
-                        onClick={() => void handleLogReminder(schedule)}
-                      >
-                        Log Reminder
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <section className="dashboard-panel dashboard-panel-wide">
-        <div className="dashboard-panel-header">
-          <div>
-            <p className="eyebrow">Recent Payments</p>
-            <h4>Payment activity</h4>
-          </div>
-        </div>
-        <div className="dashboard-table-wrapper">
-          <table className="dashboard-table">
-            <thead>
-              <tr>
-                <th>Tenant</th>
-                <th>Method</th>
-                <th>Amount</th>
-                <th>Date</th>
-                <th>Reference</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((payment) => (
-                <tr key={payment.paymentId}>
-                  <td>{payment.tenantName}</td>
-                  <td>{payment.paymentMethod}</td>
-                  <td>{formatCurrency(payment.amountPaid)}</td>
-                  <td>{formatDateTime(payment.paymentDate)}</td>
-                  <td>{payment.referenceNumber || 'N/A'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      </AppModal>
     </article>
   )
 }

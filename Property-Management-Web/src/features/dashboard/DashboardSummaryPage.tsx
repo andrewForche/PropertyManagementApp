@@ -51,7 +51,7 @@ export function DashboardSummaryPage() {
           <h3>Dashboard</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/dashboard</code>
+          <span className="module-chip">Portfolio Overview</span>
           <button
             type="button"
             className="secondary-button"
@@ -105,7 +105,7 @@ export function DashboardSummaryPage() {
               <p className="eyebrow">Live Portfolio</p>
               <h4>Property snapshot</h4>
             </div>
-            <span className="panel-caption">Pulled from `/api/properties`</span>
+            <span className="panel-caption">Live portfolio data</span>
           </div>
 
           {isLoading ? <p className="status-message">Loading portfolio data...</p> : null}

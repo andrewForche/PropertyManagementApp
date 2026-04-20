@@ -5,6 +5,9 @@ import type {
   WorkLogModel,
 } from '../../core/interfaces/api'
 import { maintenanceService } from '../../core/services/maintenance/maintenance.service'
+import { AppModal } from '../../shared/ui/AppModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyWorkLogForm: CreateWorkLogRequest = {
   clockInTime: new Date().toISOString().slice(0, 16),
@@ -15,10 +18,14 @@ const emptyWorkLogForm: CreateWorkLogRequest = {
 }
 
 export function WorkLogsPage() {
+  const { showError, showSuccess } = useToast()
   const [workLogs, setWorkLogs] = useState<WorkLogModel[]>([])
   const [projects, setProjects] = useState<MaintenanceProjectModel[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<number>(0)
+  const [createProjectId, setCreateProjectId] = useState<number>(0)
   const [form, setForm] = useState<CreateWorkLogRequest>(emptyWorkLogForm)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -37,6 +44,7 @@ export function WorkLogsPage() {
       ])
       setWorkLogs(workLogData)
       setProjects(projectData)
+      setCreateProjectId((current) => current || projectData[0]?.projectId || 0)
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
     } finally {
@@ -47,7 +55,7 @@ export function WorkLogsPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (selectedProjectId === 0) {
+    if (createProjectId === 0) {
       return
     }
 
@@ -55,16 +63,20 @@ export function WorkLogsPage() {
       setIsSaving(true)
       setErrorMessage(null)
       await maintenanceService.createWorkLog(
-        selectedProjectId,
+        createProjectId,
         normalizeForm(form),
       )
       setForm({
         ...emptyWorkLogForm,
         clockInTime: new Date().toISOString().slice(0, 16),
       })
+      setIsModalOpen(false)
+      showSuccess('Work log created', 'The work log entry was added successfully.')
       await loadWorkLogsModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Work log request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -80,15 +92,29 @@ export function WorkLogsPage() {
   const logsWithPhotos = workLogs.filter((workLog) => workLog.proofPhotoUrl).length
   const activeProjects = new Set(workLogs.map((workLog) => workLog.projectId)).size
 
+  function openCreateModal() {
+    setCreateProjectId((current) => current || projects[0]?.projectId || 0)
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    setForm({
+      ...emptyWorkLogForm,
+      clockInTime: new Date().toISOString().slice(0, 16),
+    })
+    setCreateProjectId(projects[0]?.projectId ?? 0)
+  }
+
   return (
     <article className="page-section work-logs-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Field Activity</p>
           <h3>Work Logs</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/work-logs</code>
+          <span className="module-chip">Proof and Time Tracking</span>
           <button
             type="button"
             className="secondary-button"
@@ -115,18 +141,119 @@ export function WorkLogsPage() {
         <DashboardMetric label="Active Projects" value={String(activeProjects)} tone="default" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleSubmit}>
-          <div className="property-form-header">
-            <h4>Add Work Log</h4>
+      <div className="single-panel-layout">
+        <section
+          className={`property-list-panel collapsible-panel ${isRecordsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isRecordsExpanded) {
+              setIsRecordsExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
+            <h4>Work Log Activity</h4>
+            <div className="dashboard-actions">
+              <select
+                className="inline-filter"
+                value={selectedProjectId}
+                onChange={(event) => setSelectedProjectId(Number(event.target.value))}
+              >
+                <option value={0}>All Projects</option>
+                {projects.map((project) => (
+                  <option key={project.projectId} value={project.projectId}>
+                    {project.projectTitle}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openCreateModal}
+                disabled={projects.length === 0}
+              >
+                Add Work Log
+              </button>
+              <CollapseToggleButton
+                isExpanded={isRecordsExpanded}
+                onClick={() => setIsRecordsExpanded((current) => !current)}
+                collapseLabel="Collapse work log activity"
+                expandLabel="Expand work log activity"
+              />
+            </div>
           </div>
 
+          {isRecordsExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading work logs...</p> : null}
+
+              {!isLoading && visibleLogs.length === 0 ? (
+                <p className="status-message">No work logs returned for the current filter.</p>
+              ) : null}
+
+              <div className="dashboard-table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Property</th>
+                      <th>Status</th>
+                      <th>Clock In</th>
+                      <th>Clock Out</th>
+                      <th>GPS</th>
+                      <th>Photo</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleLogs.map((workLog) => (
+                      <tr key={workLog.workLogId}>
+                        <td>
+                          {workLog.projectTitle}
+                          <br />
+                          <span className="table-subtext">
+                            {workLog.assignedVendor || 'Unassigned vendor'}
+                          </span>
+                        </td>
+                        <td>
+                          {workLog.propertyName}
+                          <br />
+                          <span className="table-subtext">
+                            {workLog.addressLine1}
+                            {workLog.unitNumber ? `, ${workLog.unitNumber}` : ''}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-pill ${toProjectStatusClass(workLog.projectStatus)}`}>
+                            {workLog.projectStatus}
+                          </span>
+                        </td>
+                        <td>{formatDateTime(workLog.clockInTime)}</td>
+                        <td>{workLog.clockOutTime ? formatDateTime(workLog.clockOutTime) : 'Open'}</td>
+                        <td>{workLog.gpsLocation || 'N/A'}</td>
+                        <td>{workLog.proofPhotoUrl || 'N/A'}</td>
+                        <td>{workLog.workNotes || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : null}
+        </section>
+      </div>
+
+      <AppModal
+        title="Add Work Log"
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleSubmit}>
           <label>
             Project
             <select
               required
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(Number(event.target.value))}
+              value={createProjectId}
+              onChange={(event) => setCreateProjectId(Number(event.target.value))}
             >
               <option value={0}>Select a project</option>
               {projects.map((project) => (
@@ -194,7 +321,7 @@ export function WorkLogsPage() {
 
           <label>
             Notes
-            <input
+            <textarea
               value={form.workNotes ?? ''}
               onChange={(event) =>
                 setForm((current) => ({
@@ -208,84 +335,12 @@ export function WorkLogsPage() {
           <button
             type="submit"
             className="primary-button"
-            disabled={isSaving || selectedProjectId === 0}
+            disabled={isSaving || createProjectId === 0}
           >
             {isSaving ? 'Saving...' : 'Create Work Log'}
           </button>
         </form>
-
-        <section className="property-list-panel">
-          <div className="property-list-header">
-            <h4>Work Log Activity</h4>
-            <select
-              className="inline-filter"
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(Number(event.target.value))}
-            >
-              <option value={0}>All Projects</option>
-              {projects.map((project) => (
-                <option key={project.projectId} value={project.projectId}>
-                  {project.projectTitle}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {isLoading ? <p className="status-message">Loading work logs...</p> : null}
-
-          {!isLoading && visibleLogs.length === 0 ? (
-            <p className="status-message">No work logs returned for the current filter.</p>
-          ) : null}
-
-          <div className="dashboard-table-wrapper">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Property</th>
-                  <th>Status</th>
-                  <th>Clock In</th>
-                  <th>Clock Out</th>
-                  <th>GPS</th>
-                  <th>Photo</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleLogs.map((workLog) => (
-                  <tr key={workLog.workLogId}>
-                    <td>
-                      {workLog.projectTitle}
-                      <br />
-                      <span className="table-subtext">
-                        {workLog.assignedVendor || 'Unassigned vendor'}
-                      </span>
-                    </td>
-                    <td>
-                      {workLog.propertyName}
-                      <br />
-                      <span className="table-subtext">
-                        {workLog.addressLine1}
-                        {workLog.unitNumber ? `, ${workLog.unitNumber}` : ''}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-pill ${toProjectStatusClass(workLog.projectStatus)}`}>
-                        {workLog.projectStatus}
-                      </span>
-                    </td>
-                    <td>{formatDateTime(workLog.clockInTime)}</td>
-                    <td>{workLog.clockOutTime ? formatDateTime(workLog.clockOutTime) : 'Open'}</td>
-                    <td>{workLog.gpsLocation || 'N/A'}</td>
-                    <td>{workLog.proofPhotoUrl || 'N/A'}</td>
-                    <td>{workLog.workNotes || 'N/A'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
+      </AppModal>
     </article>
   )
 }

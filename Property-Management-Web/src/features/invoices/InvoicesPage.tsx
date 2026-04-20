@@ -7,6 +7,10 @@ import type {
   UpdateInvoiceRequest,
 } from '../../core/interfaces/api'
 import { invoiceService } from '../../core/services/invoices/invoice.service'
+import { AppModal } from '../../shared/ui/AppModal'
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
+import { useToast } from '../../shared/ui/ToastProvider'
 
 const emptyForm: CreateInvoiceRequest = {
   projectId: 0,
@@ -18,10 +22,14 @@ const emptyForm: CreateInvoiceRequest = {
 }
 
 export function InvoicesPage() {
+  const { showError, showSuccess } = useToast()
   const [invoices, setInvoices] = useState<InvoiceModel[]>([])
   const [projectOptions, setProjectOptions] = useState<InvoiceProjectOptionModel[]>([])
   const [form, setForm] = useState<CreateInvoiceRequest>(emptyForm)
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null)
+  const [pendingDeleteInvoiceId, setPendingDeleteInvoiceId] = useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRecordsExpanded, setIsRecordsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -67,15 +75,20 @@ export function InvoicesPage() {
 
       if (editingInvoiceId === null) {
         await invoiceService.create(payload)
+        showSuccess('Invoice created', 'The invoice record was added successfully.')
       } else {
         const updatePayload: UpdateInvoiceRequest = { ...payload }
         await invoiceService.update(editingInvoiceId, updatePayload)
+        showSuccess('Invoice updated', 'The invoice changes were saved.')
       }
 
       resetForm()
+      setIsModalOpen(false)
       await loadInvoicesModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Invoice request failed', message)
     } finally {
       setIsSaving(false)
     }
@@ -91,20 +104,15 @@ export function InvoicesPage() {
       paidOn: invoice.paidOn ? toDateInput(invoice.paidOn) : '',
       isExported: invoice.isExported,
     })
+    setIsModalOpen(true)
   }
 
   async function handleDelete(invoiceId: number) {
-    const confirmed = window.confirm(
-      'Delete this invoice record? This cannot be undone.',
-    )
-
-    if (!confirmed) {
-      return
-    }
-
     try {
       setErrorMessage(null)
       await invoiceService.delete(invoiceId)
+      setPendingDeleteInvoiceId(null)
+      showSuccess('Invoice deleted', 'The invoice record was removed.')
 
       if (editingInvoiceId === invoiceId) {
         resetForm()
@@ -112,7 +120,9 @@ export function InvoicesPage() {
 
       await loadInvoicesModule()
     } catch (error) {
-      setErrorMessage(getErrorMessage(error))
+      const message = getErrorMessage(error)
+      setErrorMessage(message)
+      showError('Invoice delete failed', message)
     }
   }
 
@@ -124,6 +134,24 @@ export function InvoicesPage() {
     })
   }
 
+  function openCreateModal() {
+    resetForm()
+    setIsModalOpen(true)
+  }
+
+  function closeModal() {
+    setIsModalOpen(false)
+    resetForm()
+  }
+
+  function openDeleteConfirmation(invoiceId: number) {
+    setPendingDeleteInvoiceId(invoiceId)
+  }
+
+  function closeDeleteConfirmation() {
+    setPendingDeleteInvoiceId(null)
+  }
+
   const totalBilled = invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0)
   const paidCount = invoices.filter((invoice) => invoice.invoiceStatus === 'Paid').length
   const overdueCount = invoices.filter((invoice) => invoice.invoiceStatus === 'Overdue').length
@@ -133,11 +161,11 @@ export function InvoicesPage() {
     <article className="page-section properties-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Billing</p>
           <h3>Invoices</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/invoices</code>
+          <span className="module-chip">Vendor Billing</span>
           <button
             type="button"
             className="secondary-button"
@@ -163,21 +191,123 @@ export function InvoicesPage() {
         <DashboardMetric label="Exported" value={String(exportedCount)} tone="warning" />
       </section>
 
-      <div className="properties-layout">
-        <form className="property-form" onSubmit={handleSubmit}>
-          <div className="property-form-header">
-            <h4>{editingInvoiceId === null ? 'Add Invoice' : 'Edit Invoice'}</h4>
-            {editingInvoiceId !== null ? (
+      <div className="single-panel-layout">
+        <section
+          className={`property-list-panel collapsible-panel ${isRecordsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isRecordsExpanded) {
+              setIsRecordsExpanded(true)
+            }
+          }}
+        >
+          <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
+            <h4>Invoice Records</h4>
+            <div className="dashboard-actions">
               <button
                 type="button"
-                className="secondary-button"
-                onClick={resetForm}
+                className="primary-button"
+                onClick={openCreateModal}
+                disabled={projectOptions.length === 0}
               >
-                Cancel Edit
+                Add Invoice
               </button>
-            ) : null}
+              <CollapseToggleButton
+                isExpanded={isRecordsExpanded}
+                onClick={() => setIsRecordsExpanded((current) => !current)}
+                collapseLabel="Collapse invoice records"
+                expandLabel="Expand invoice records"
+              />
+            </div>
           </div>
 
+          {isRecordsExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading invoices...</p> : null}
+
+              {!isLoading && invoices.length === 0 ? (
+                <p className="status-message">
+                  No invoices returned yet. Create one from a maintenance project to get started.
+                </p>
+              ) : null}
+
+              <div className="property-card-list">
+                {invoices.map((invoice) => (
+                  <article key={invoice.invoiceId} className="property-card tenant-card">
+                    <div className="property-card-header">
+                      <div>
+                        <h5>{invoice.projectTitle}</h5>
+                        <p>{invoice.propertyName}</p>
+                      </div>
+                      <span className={`status-pill ${toInvoiceStatusClass(invoice.invoiceStatus)}`}>
+                        {invoice.invoiceStatus}
+                      </span>
+                    </div>
+
+                    <dl className="property-details tenant-details">
+                      <div>
+                        <dt>Amount</dt>
+                        <dd>{formatCurrency(invoice.totalAmount)}</dd>
+                      </div>
+                      <div>
+                        <dt>Vendor</dt>
+                        <dd>{invoice.assignedVendor || 'Unassigned'}</dd>
+                      </div>
+                      <div>
+                        <dt>Exported</dt>
+                        <dd>{invoice.isExported ? 'Yes' : 'No'}</dd>
+                      </div>
+                    </dl>
+
+                    <p className="tenant-address">
+                      {invoice.addressLine1}
+                      {invoice.unitNumber ? `, ${invoice.unitNumber}` : ''}
+                    </p>
+
+                    <dl className="property-details tenant-details">
+                      <div>
+                        <dt>Issued</dt>
+                        <dd>{invoice.issuedOn ? formatDate(invoice.issuedOn) : 'Not set'}</dd>
+                      </div>
+                      <div>
+                        <dt>Paid</dt>
+                        <dd>{invoice.paidOn ? formatDate(invoice.paidOn) : 'Not paid'}</dd>
+                      </div>
+                      <div>
+                        <dt>Updated</dt>
+                        <dd>{formatDate(invoice.updatedAt)}</dd>
+                      </div>
+                    </dl>
+
+                    <div className="property-card-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => handleEdit(invoice)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => openDeleteConfirmation(invoice.invoiceId)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      </div>
+
+      <AppModal
+        title={editingInvoiceId === null ? 'Add Invoice' : 'Edit Invoice'}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      >
+        <form className="property-form" onSubmit={handleSubmit}>
           <label>
             Maintenance Project
             <select
@@ -287,89 +417,20 @@ export function InvoicesPage() {
                 : 'Save Changes'}
           </button>
         </form>
+      </AppModal>
 
-        <section className="property-list-panel">
-          <div className="property-list-header">
-            <h4>Invoice Records</h4>
-          </div>
-
-          {isLoading ? <p className="status-message">Loading invoices...</p> : null}
-
-          {!isLoading && invoices.length === 0 ? (
-            <p className="status-message">
-              No invoices returned yet. Create one from a maintenance project to get started.
-            </p>
-          ) : null}
-
-          <div className="property-card-list">
-            {invoices.map((invoice) => (
-              <article key={invoice.invoiceId} className="property-card tenant-card">
-                <div className="property-card-header">
-                  <div>
-                    <h5>{invoice.projectTitle}</h5>
-                    <p>{invoice.propertyName}</p>
-                  </div>
-                  <span className={`status-pill ${toInvoiceStatusClass(invoice.invoiceStatus)}`}>
-                    {invoice.invoiceStatus}
-                  </span>
-                </div>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Amount</dt>
-                    <dd>{formatCurrency(invoice.totalAmount)}</dd>
-                  </div>
-                  <div>
-                    <dt>Vendor</dt>
-                    <dd>{invoice.assignedVendor || 'Unassigned'}</dd>
-                  </div>
-                  <div>
-                    <dt>Exported</dt>
-                    <dd>{invoice.isExported ? 'Yes' : 'No'}</dd>
-                  </div>
-                </dl>
-
-                <p className="tenant-address">
-                  {invoice.addressLine1}
-                  {invoice.unitNumber ? `, ${invoice.unitNumber}` : ''}
-                </p>
-
-                <dl className="property-details tenant-details">
-                  <div>
-                    <dt>Issued</dt>
-                    <dd>{invoice.issuedOn ? formatDate(invoice.issuedOn) : 'Not set'}</dd>
-                  </div>
-                  <div>
-                    <dt>Paid</dt>
-                    <dd>{invoice.paidOn ? formatDate(invoice.paidOn) : 'Not paid'}</dd>
-                  </div>
-                  <div>
-                    <dt>Updated</dt>
-                    <dd>{formatDate(invoice.updatedAt)}</dd>
-                  </div>
-                </dl>
-
-                <div className="property-card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(invoice)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void handleDelete(invoice.invoiceId)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
+      <ConfirmationModal
+        title="Delete Invoice"
+        message="Delete this invoice record? This action cannot be undone."
+        confirmLabel="Delete Invoice"
+        isOpen={pendingDeleteInvoiceId !== null}
+        onCancel={closeDeleteConfirmation}
+        onConfirm={() => {
+          if (pendingDeleteInvoiceId !== null) {
+            void handleDelete(pendingDeleteInvoiceId)
+          }
+        }}
+      />
     </article>
   )
 }

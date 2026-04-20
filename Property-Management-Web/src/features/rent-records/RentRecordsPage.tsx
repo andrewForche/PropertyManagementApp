@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { RentPaymentModel, RentScheduleModel } from '../../core/interfaces/api'
 import { rentService } from '../../core/services/rent/rent.service'
+import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 
 export function RentRecordsPage() {
   const [schedules, setSchedules] = useState<RentScheduleModel[]>([])
   const [payments, setPayments] = useState<RentPaymentModel[]>([])
+  const [isSchedulesExpanded, setIsSchedulesExpanded] = useState(true)
+  const [isPaymentsExpanded, setIsPaymentsExpanded] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -45,11 +48,11 @@ export function RentRecordsPage() {
     <article className="page-section rent-records-page">
       <div className="page-section-header">
         <div>
-          <p className="eyebrow">Live Feature</p>
+          <p className="eyebrow">Ledger</p>
           <h3>Rent Records</h3>
         </div>
         <div className="dashboard-actions">
-          <code>/api/rent-schedules + /api/rent-payments</code>
+          <span className="module-chip">Payment Ledger</span>
           <button
             type="button"
             className="secondary-button"
@@ -77,101 +80,135 @@ export function RentRecordsPage() {
       </section>
 
       <div className="dashboard-layout">
-        <section className="dashboard-panel dashboard-panel-wide">
-          <div className="dashboard-panel-header">
+        <section
+          className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isSchedulesExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isSchedulesExpanded) {
+              setIsSchedulesExpanded(true)
+            }
+          }}
+        >
+          <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
             <div>
               <p className="eyebrow">Ledger View</p>
               <h4>Scheduled rent records</h4>
             </div>
+            <CollapseToggleButton
+              isExpanded={isSchedulesExpanded}
+              onClick={() => setIsSchedulesExpanded((current) => !current)}
+              collapseLabel="Collapse scheduled rent records"
+              expandLabel="Expand scheduled rent records"
+            />
           </div>
 
-          {isLoading ? <p className="status-message">Loading rent records...</p> : null}
+          {isSchedulesExpanded ? (
+            <>
+              {isLoading ? <p className="status-message">Loading rent records...</p> : null}
 
-          {!isLoading && schedules.length === 0 ? (
-            <p className="status-message">No rent schedules returned yet.</p>
+              {!isLoading && schedules.length === 0 ? (
+                <p className="status-message">No rent schedules returned yet.</p>
+              ) : null}
+
+              <div className="dashboard-table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th>
+                      <th>Property</th>
+                      <th>Due Date</th>
+                      <th>Status</th>
+                      <th>Base Rent</th>
+                      <th>Late Fee</th>
+                      <th>Balance</th>
+                      <th>Reminders</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedules.map((schedule) => (
+                      <tr key={schedule.scheduleId}>
+                        <td>{schedule.tenantName}</td>
+                        <td>
+                          {schedule.propertyName}
+                          <br />
+                          <span className="table-subtext">
+                            {schedule.addressLine1}
+                            {schedule.unitNumber ? `, ${schedule.unitNumber}` : ''}
+                          </span>
+                        </td>
+                        <td>{formatDate(schedule.dueDate)}</td>
+                        <td>
+                          <span className={`status-pill ${toStatusClass(schedule.scheduleStatus)}`}>
+                            {schedule.scheduleStatus}
+                          </span>
+                        </td>
+                        <td>{formatCurrency(schedule.baseRent)}</td>
+                        <td>{formatCurrency(schedule.lateFeeAmount)}</td>
+                        <td>{formatCurrency(schedule.balanceDue)}</td>
+                        <td>{schedule.reminderCount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : null}
-
-          <div className="dashboard-table-wrapper">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Tenant</th>
-                  <th>Property</th>
-                  <th>Due Date</th>
-                  <th>Status</th>
-                  <th>Base Rent</th>
-                  <th>Late Fee</th>
-                  <th>Balance</th>
-                  <th>Reminders</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedules.map((schedule) => (
-                  <tr key={schedule.scheduleId}>
-                    <td>{schedule.tenantName}</td>
-                    <td>
-                      {schedule.propertyName}
-                      <br />
-                      <span className="table-subtext">
-                        {schedule.addressLine1}
-                        {schedule.unitNumber ? `, ${schedule.unitNumber}` : ''}
-                      </span>
-                    </td>
-                    <td>{formatDate(schedule.dueDate)}</td>
-                    <td>
-                      <span className={`status-pill ${toStatusClass(schedule.scheduleStatus)}`}>
-                        {schedule.scheduleStatus}
-                      </span>
-                    </td>
-                    <td>{formatCurrency(schedule.baseRent)}</td>
-                    <td>{formatCurrency(schedule.lateFeeAmount)}</td>
-                    <td>{formatCurrency(schedule.balanceDue)}</td>
-                    <td>{schedule.reminderCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
 
-        <section className="dashboard-panel dashboard-panel-wide">
-          <div className="dashboard-panel-header">
+        <section
+          className={`dashboard-panel dashboard-panel-wide collapsible-panel ${isPaymentsExpanded ? '' : 'collapsed'}`}
+          onClick={() => {
+            if (!isPaymentsExpanded) {
+              setIsPaymentsExpanded(true)
+            }
+          }}
+        >
+          <div className="dashboard-panel-header" onClick={(event) => event.stopPropagation()}>
             <div>
               <p className="eyebrow">Payment History</p>
               <h4>Recorded rent payments</h4>
             </div>
+            <CollapseToggleButton
+              isExpanded={isPaymentsExpanded}
+              onClick={() => setIsPaymentsExpanded((current) => !current)}
+              collapseLabel="Collapse recorded rent payments"
+              expandLabel="Expand recorded rent payments"
+            />
           </div>
 
-          {!isLoading && payments.length === 0 ? (
-            <p className="status-message">No rent payments returned yet.</p>
+          {isPaymentsExpanded ? (
+            <>
+              {!isLoading && payments.length === 0 ? (
+                <p className="status-message">No rent payments returned yet.</p>
+              ) : null}
+
+              <div className="dashboard-table-wrapper">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th>
+                      <th>Schedule Id</th>
+                      <th>Method</th>
+                      <th>Amount</th>
+                      <th>Payment Date</th>
+                      <th>Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((payment) => (
+                      <tr key={payment.paymentId}>
+                        <td>{payment.tenantName}</td>
+                        <td>{payment.scheduleId}</td>
+                        <td>{payment.paymentMethod}</td>
+                        <td>{formatCurrency(payment.amountPaid)}</td>
+                        <td>{formatDateTime(payment.paymentDate)}</td>
+                        <td>{payment.referenceNumber || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : null}
-
-          <div className="dashboard-table-wrapper">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Tenant</th>
-                  <th>Schedule Id</th>
-                  <th>Method</th>
-                  <th>Amount</th>
-                  <th>Payment Date</th>
-                  <th>Reference</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.paymentId}>
-                    <td>{payment.tenantName}</td>
-                    <td>{payment.scheduleId}</td>
-                    <td>{payment.paymentMethod}</td>
-                    <td>{formatCurrency(payment.amountPaid)}</td>
-                    <td>{formatDateTime(payment.paymentDate)}</td>
-                    <td>{payment.referenceNumber || 'N/A'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
       </div>
     </article>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
+using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Models.Response;
 
@@ -142,11 +143,36 @@ public sealed class TenantDataService : ITenantDataService
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
+        if (await HasRentScheduleDependenciesAsync(connection, tenantId, cancellationToken))
+        {
+            throw new DeleteConflictException(
+                "This tenant cannot be deleted because rent schedules are still tied to the record.");
+        }
+
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@TenantId", tenantId);
 
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
+    }
+
+    private static async Task<bool> HasRentScheduleDependenciesAsync(
+        MySqlConnection connection,
+        int tenantId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT EXISTS(
+                SELECT 1
+                FROM RentSchedules
+                WHERE TenantId = @TenantId
+            );
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@TenantId", tenantId);
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 1;
     }
 
     private static void AddTenantParameters(
