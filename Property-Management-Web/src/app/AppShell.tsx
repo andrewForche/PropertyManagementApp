@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ComponentType, MouseEvent } from 'react'
 import { FEATURE_ROUTES } from '../shared/constants/navigation'
-import { AppEnvironmentSummary } from './config/AppEnvironmentSummary'
 import { DashboardSummaryPage } from '../features/dashboard/DashboardSummaryPage'
 import { RentCollectionPage } from '../features/rent-collection/RentCollectionPage'
 import { RentRecordsPage } from '../features/rent-records/RentRecordsPage'
@@ -76,8 +75,6 @@ export function AppShell() {
             ))}
           </ul>
         </nav>
-
-        <AppEnvironmentSummary />
       </aside>
 
       <main className="content">
