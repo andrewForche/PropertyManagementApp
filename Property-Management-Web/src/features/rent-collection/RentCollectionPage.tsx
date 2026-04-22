@@ -7,6 +7,7 @@ import type {
 } from '../../core/interfaces/api'
 import { rentService } from '../../core/services/rent/rent.service'
 import { AppModal } from '../../shared/ui/AppModal'
+import { RoleWrapper } from '../../shared/auth/RoleWrapper'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -226,13 +227,15 @@ export function RentCollectionPage() {
                         <td>{formatCurrency(schedule.balanceDue)}</td>
                         <td>{schedule.reminderCount}</td>
                         <td>
-                          <button
-                            type="button"
-                            className="secondary-button compact-button"
-                            onClick={() => void handleLogReminder(schedule)}
-                          >
-                            Log Reminder
-                          </button>
+                          <RoleWrapper allowedRoles={['Admin', 'Landlord']}>
+                            <button
+                              type="button"
+                              className="secondary-button compact-button"
+                              onClick={() => void handleLogReminder(schedule)}
+                            >
+                              Log Reminder
+                            </button>
+                          </RoleWrapper>
                         </td>
                       </tr>
                     ))}
@@ -258,14 +261,16 @@ export function RentCollectionPage() {
             <h4>Payment activity</h4>
           </div>
           <div className="dashboard-actions">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={openCreateModal}
-              disabled={schedules.length === 0}
-            >
-              Add Payment
-            </button>
+            <RoleWrapper allowedRoles={['Admin', 'Landlord']}>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={openCreateModal}
+                disabled={schedules.length === 0}
+              >
+                Add Payment
+              </button>
+            </RoleWrapper>
             <CollapseToggleButton
               isExpanded={isPaymentsExpanded}
               onClick={() => setIsPaymentsExpanded((current) => !current)}

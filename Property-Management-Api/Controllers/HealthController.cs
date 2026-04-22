@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Property_Management_Api.Configuration;
@@ -15,6 +16,7 @@ public class HealthController : ControllerBase
         _apiSettings = apiSettings.Value;
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Get()
     {

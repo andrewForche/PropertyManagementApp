@@ -9,6 +9,7 @@ import type {
 import { invoiceService } from '../../core/services/invoices/invoice.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
+import { RoleWrapper } from '../../shared/auth/RoleWrapper'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -203,14 +204,16 @@ export function InvoicesPage() {
           <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Invoice Records</h4>
             <div className="dashboard-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={openCreateModal}
-                disabled={projectOptions.length === 0}
-              >
-                Add Invoice
-              </button>
+              <RoleWrapper allowedRoles={['Admin']}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={openCreateModal}
+                  disabled={projectOptions.length === 0}
+                >
+                  Add Invoice
+                </button>
+              </RoleWrapper>
               <CollapseToggleButton
                 isExpanded={isRecordsExpanded}
                 onClick={() => setIsRecordsExpanded((current) => !current)}
@@ -279,20 +282,24 @@ export function InvoicesPage() {
                     </dl>
 
                     <div className="property-card-actions">
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => handleEdit(invoice)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="danger-button"
-                        onClick={() => openDeleteConfirmation(invoice.invoiceId)}
-                      >
-                        Delete
-                      </button>
+                      <RoleWrapper allowedRoles={['Admin']}>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => handleEdit(invoice)}
+                        >
+                          Edit
+                        </button>
+                      </RoleWrapper>
+                      <RoleWrapper allowedRoles={['Admin']}>
+                        <button
+                          type="button"
+                          className="danger-button"
+                          onClick={() => openDeleteConfirmation(invoice.invoiceId)}
+                        >
+                          Delete
+                        </button>
+                      </RoleWrapper>
                     </div>
                   </article>
                 ))}

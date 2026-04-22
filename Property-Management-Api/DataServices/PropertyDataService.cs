@@ -80,6 +80,75 @@ public sealed class PropertyDataService : IPropertyDataService
         return null;
     }
 
+    public async Task<PropertyResponse?> GetByAuthUserIdAsync(
+        int authUserId,
+        string? email,
+        CancellationToken cancellationToken)
+    {
+        const string authUserSql = """
+            SELECT
+                p.PropertyId,
+                p.PropertyName,
+                p.AddressLine1,
+                p.UnitNumber,
+                p.MonthlyRent,
+                p.OccupancyStatus,
+                p.CreatedAt,
+                p.UpdatedAt
+            FROM Properties p
+            INNER JOIN Tenants t ON t.PropertyId = p.PropertyId
+            WHERE t.AuthUserId = @AuthUserId
+            LIMIT 1;
+            """;
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var authUserCommand = new MySqlCommand(authUserSql, connection);
+        authUserCommand.Parameters.AddWithValue("@AuthUserId", authUserId);
+
+        await using (var reader = await authUserCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return MapProperty(reader);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return null;
+        }
+
+        const string emailSql = """
+            SELECT
+                p.PropertyId,
+                p.PropertyName,
+                p.AddressLine1,
+                p.UnitNumber,
+                p.MonthlyRent,
+                p.OccupancyStatus,
+                p.CreatedAt,
+                p.UpdatedAt
+            FROM Properties p
+            INNER JOIN Tenants t ON t.PropertyId = p.PropertyId
+            WHERE t.Email = @Email
+            LIMIT 2;
+            """;
+
+        await using var emailCommand = new MySqlCommand(emailSql, connection);
+        emailCommand.Parameters.AddWithValue("@Email", email.Trim());
+
+        var matches = new List<PropertyResponse>();
+        await using var emailReader = await emailCommand.ExecuteReaderAsync(cancellationToken);
+        while (await emailReader.ReadAsync(cancellationToken))
+        {
+            matches.Add(MapProperty(emailReader));
+        }
+
+        return matches.Count == 1 ? matches[0] : null;
+    }
+
     public async Task<PropertyResponse> CreateAsync(CreatePropertyRequest request, CancellationToken cancellationToken)
     {
         const string sql = """

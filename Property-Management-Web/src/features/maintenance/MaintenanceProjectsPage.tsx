@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useAuth } from '../../core/auth/AuthContext'
 import type {
   CreateMaintenanceProjectRequest,
   CreateWorkLogRequest,
@@ -12,6 +13,7 @@ import { maintenanceService } from '../../core/services/maintenance/maintenance.
 import { propertyService } from '../../core/services/properties/property.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
+import { RoleWrapper } from '../../shared/auth/RoleWrapper'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -33,6 +35,7 @@ const emptyWorkLogForm: CreateWorkLogRequest = {
 }
 
 export function MaintenanceProjectsPage() {
+  const { primaryRole } = useAuth()
   const { showError, showSuccess } = useToast()
   const [projects, setProjects] = useState<MaintenanceProjectModel[]>([])
   const [properties, setProperties] = useState<PropertyModel[]>([])
@@ -56,7 +59,7 @@ export function MaintenanceProjectsPage() {
 
   useEffect(() => {
     void loadMaintenanceModule()
-  }, [])
+  }, [primaryRole])
 
   useEffect(() => {
     if (properties.length > 0 && projectForm.propertyId === 0) {
@@ -71,9 +74,10 @@ export function MaintenanceProjectsPage() {
     try {
       setIsLoading(true)
       setErrorMessage(null)
+      const isContractor = primaryRole === 'Contractor'
       const [projectData, propertyData, allWorkLogs] = await Promise.all([
         maintenanceService.getProjects(),
-        propertyService.getAll(),
+        isContractor ? Promise.resolve([] as PropertyModel[]) : propertyService.getAll(),
         maintenanceService.getAllWorkLogs(),
       ])
       setProjects(projectData)
@@ -319,14 +323,16 @@ export function MaintenanceProjectsPage() {
           <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Project Records</h4>
             <div className="dashboard-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={openProjectModal}
-                disabled={properties.length === 0}
-              >
-                Add Project
-              </button>
+              <RoleWrapper allowedRoles={['Admin', 'Landlord']}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={openProjectModal}
+                  disabled={properties.length === 0}
+                >
+                  Add Project
+                </button>
+              </RoleWrapper>
               <CollapseToggleButton
                 isExpanded={isProjectsExpanded}
                 onClick={() => setIsProjectsExpanded((current) => !current)}
@@ -386,13 +392,15 @@ export function MaintenanceProjectsPage() {
                       </p>
 
                       <div className="property-card-actions">
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          onClick={() => handleEdit(project)}
-                        >
-                          Edit
-                        </button>
+                        <RoleWrapper allowedRoles={['Admin', 'Landlord']}>
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() => handleEdit(project)}
+                          >
+                            Edit
+                          </button>
+                        </RoleWrapper>
                         {hasLogs ? (
                           <button
                             type="button"
@@ -402,13 +410,15 @@ export function MaintenanceProjectsPage() {
                             View Logs
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          className="danger-button"
-                          onClick={() => openDeleteConfirmation(project.projectId)}
-                        >
-                          Delete
-                        </button>
+                        <RoleWrapper allowedRoles={['Admin', 'Landlord']}>
+                          <button
+                            type="button"
+                            className="danger-button"
+                            onClick={() => openDeleteConfirmation(project.projectId)}
+                          >
+                            Delete
+                          </button>
+                        </RoleWrapper>
                       </div>
                     </article>
                   )
@@ -434,14 +444,16 @@ export function MaintenanceProjectsPage() {
               <h4>Project activity</h4>
             </div>
             <div className="dashboard-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={openWorkLogModal}
-                disabled={projects.length === 0}
-              >
-                Add Work Log
-              </button>
+              <RoleWrapper allowedRoles={['Admin', 'Contractor']}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={openWorkLogModal}
+                  disabled={projects.length === 0}
+                >
+                  Add Work Log
+                </button>
+              </RoleWrapper>
               <CollapseToggleButton
                 isExpanded={isWorkLogsExpanded}
                 onClick={() => setIsWorkLogsExpanded((current) => !current)}

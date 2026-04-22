@@ -7,6 +7,7 @@ import { apiClient } from '../http/api-client.service'
 
 export const tenantService = {
   getAll: () => apiClient.get<TenantModel[]>('/tenants'),
+  getMe: () => apiClient.get<TenantModel>('/tenants/me'),
   getById: (tenantId: number) => apiClient.get<TenantModel>(`/tenants/${tenantId}`),
   create: (payload: CreateTenantRequest) =>
     apiClient.post<CreateTenantRequest, TenantModel>('/tenants', payload),

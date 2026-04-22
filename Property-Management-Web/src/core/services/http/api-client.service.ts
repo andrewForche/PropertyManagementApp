@@ -1,4 +1,5 @@
 import { appEnvironment } from '../../../app/config/env'
+import { getStoredAuthToken } from '../../auth/auth-storage'
 
 export class ApiClient {
   private readonly baseUrl: string
@@ -43,6 +44,9 @@ export class ApiClient {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...(getStoredAuthToken()
+          ? { Authorization: `Bearer ${getStoredAuthToken()}` }
+          : {}),
         ...init.headers,
       },
     })

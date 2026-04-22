@@ -60,6 +60,53 @@ public sealed class TenantDataService : ITenantDataService
         return null;
     }
 
+    public async Task<TenantResponse?> GetByAuthUserIdAsync(
+        int authUserId,
+        string? email,
+        CancellationToken cancellationToken)
+    {
+        const string authUserSql = TenantSelectSql + """
+            WHERE t.AuthUserId = @AuthUserId
+            LIMIT 1;
+            """;
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var authUserCommand = new MySqlCommand(authUserSql, connection);
+        authUserCommand.Parameters.AddWithValue("@AuthUserId", authUserId);
+
+        await using (var reader = await authUserCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return MapTenant(reader);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return null;
+        }
+
+        const string emailSql = TenantSelectSql + """
+            WHERE t.Email = @Email
+            LIMIT 2;
+            """;
+
+        await using var emailCommand = new MySqlCommand(emailSql, connection);
+        emailCommand.Parameters.AddWithValue("@Email", email.Trim());
+
+        var matches = new List<TenantResponse>();
+        await using var emailReader = await emailCommand.ExecuteReaderAsync(cancellationToken);
+        while (await emailReader.ReadAsync(cancellationToken))
+        {
+            matches.Add(MapTenant(emailReader));
+        }
+
+        return matches.Count == 1 ? matches[0] : null;
+    }
+
     public async Task<TenantResponse> CreateAsync(CreateTenantRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -225,6 +272,7 @@ public sealed class TenantDataService : ITenantDataService
     private const string TenantSelectSql = """
         SELECT
             t.TenantId,
+            t.AuthUserId,
             t.FirstName,
             t.LastName,
             CONCAT(t.FirstName, ' ', t.LastName) AS FullName,

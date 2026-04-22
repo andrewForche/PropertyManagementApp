@@ -23,6 +23,11 @@ public sealed class TenantService : ITenantService
         return _tenantDataService.GetByIdAsync(tenantId, cancellationToken);
     }
 
+    public Task<TenantResponse?> GetByAuthUserIdAsync(int authUserId, string? email, CancellationToken cancellationToken)
+    {
+        return _tenantDataService.GetByAuthUserIdAsync(authUserId, email, cancellationToken);
+    }
+
     public Task<TenantResponse> CreateAsync(CreateTenantRequest request, CancellationToken cancellationToken)
     {
         return _tenantDataService.CreateAsync(request, cancellationToken);

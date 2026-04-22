@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Auth;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Services;
 
@@ -15,6 +16,7 @@ public class InvoicesController : ControllerBase
         _invoiceService = invoiceService;
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -22,6 +24,7 @@ public class InvoicesController : ControllerBase
         return Ok(invoices);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet("project-options")]
     public async Task<IActionResult> GetProjectOptions(CancellationToken cancellationToken)
     {
@@ -29,6 +32,7 @@ public class InvoicesController : ControllerBase
         return Ok(projects);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet("{invoiceId:int}")]
     public async Task<IActionResult> GetById(int invoiceId, CancellationToken cancellationToken)
     {
@@ -42,6 +46,7 @@ public class InvoicesController : ControllerBase
         return Ok(invoice);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateInvoiceRequest request,
@@ -51,6 +56,7 @@ public class InvoicesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { invoiceId = createdInvoice.InvoiceId }, createdInvoice);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpPut("{invoiceId:int}")]
     public async Task<IActionResult> Update(
         int invoiceId,
@@ -67,6 +73,7 @@ public class InvoicesController : ControllerBase
         return Ok(updatedInvoice);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpDelete("{invoiceId:int}")]
     public async Task<IActionResult> Delete(int invoiceId, CancellationToken cancellationToken)
     {

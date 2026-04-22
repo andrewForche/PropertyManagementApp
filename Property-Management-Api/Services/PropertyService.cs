@@ -23,6 +23,11 @@ public sealed class PropertyService : IPropertyService
         return _propertyDataService.GetByIdAsync(propertyId, cancellationToken);
     }
 
+    public Task<PropertyResponse?> GetByAuthUserIdAsync(int authUserId, string? email, CancellationToken cancellationToken)
+    {
+        return _propertyDataService.GetByAuthUserIdAsync(authUserId, email, cancellationToken);
+    }
+
     public Task<PropertyResponse> CreateAsync(CreatePropertyRequest request, CancellationToken cancellationToken)
     {
         return _propertyDataService.CreateAsync(request, cancellationToken);

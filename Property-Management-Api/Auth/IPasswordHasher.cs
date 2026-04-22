@@ -1,0 +1,7 @@
+namespace Property_Management_Api.Auth;
+
+public interface IPasswordHasher
+{
+    string HashPassword(string password);
+    bool VerifyPassword(string password, string passwordHash);
+}

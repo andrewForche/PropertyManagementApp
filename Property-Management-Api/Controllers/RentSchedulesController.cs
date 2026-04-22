@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Auth;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Services;
 
@@ -15,6 +16,7 @@ public class RentSchedulesController : ControllerBase
         _rentCollectionService = rentCollectionService;
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -22,6 +24,36 @@ public class RentSchedulesController : ControllerBase
         return Ok(schedules);
     }
 
+    [AuthorizeRoles(UserRoles.Tenant)]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMySchedules(
+        [FromServices] ITenantService tenantService,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await tenantService.GetByAuthUserIdAsync(
+            User.GetRequiredAuthUserId(),
+            User.GetEmailAddress(),
+            cancellationToken);
+
+        if (tenant is null)
+        {
+            return Forbid();
+        }
+
+        var claimedTenantId = User.GetTenantId();
+        if (claimedTenantId.HasValue && claimedTenantId.Value != tenant.TenantId)
+        {
+            return Forbid();
+        }
+
+        var schedules = await _rentCollectionService.GetSchedulesForTenantAsync(
+            tenant.TenantId,
+            cancellationToken);
+
+        return Ok(schedules);
+    }
+
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpPut("{scheduleId:int}")]
     public async Task<IActionResult> Update(
         int scheduleId,

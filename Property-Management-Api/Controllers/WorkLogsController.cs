@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Auth;
 using Property_Management_Api.Services;
 
 namespace Property_Management_Api.Controllers;
@@ -14,6 +15,7 @@ public class WorkLogsController : ControllerBase
         _maintenanceService = maintenanceService;
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord, UserRoles.Contractor)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {

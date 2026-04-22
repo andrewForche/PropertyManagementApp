@@ -1,12 +1,15 @@
 import './App.css'
 import { AppShell } from './app/AppShell'
+import { AuthProvider } from './core/auth/AuthContext'
 import { ToastProvider } from './shared/ui/ToastProvider'
 
 function App() {
   return (
-    <ToastProvider>
-      <AppShell />
-    </ToastProvider>
+    <AuthProvider>
+      <ToastProvider>
+        <AppShell />
+      </ToastProvider>
+    </AuthProvider>
   )
 }
 
