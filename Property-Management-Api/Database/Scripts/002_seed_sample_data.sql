@@ -1,5 +1,11 @@
 USE property_management_app;
 
+INSERT INTO AuthUsers (AuthUserId, Email, PasswordHash, RoleName, IsActive) VALUES
+(1, 'admin@property.local', 'pbkdf2-sha256$100000$oKJJmRu2/dzIGOGHe9n85Q==$8UaPY/+SHzS7lga+PsuvRdNfzoNM7dftQua5De79TBs=', 'Admin', TRUE),
+(2, 'landlord@property.local', 'pbkdf2-sha256$100000$dNaI2dNd0W1v614uzD7rcQ==$lisNg7hme4wjXIB5msAMQRLjNzytQzGmhSrfeE9SqOw=', 'Landlord', TRUE),
+(3, 'contractor@property.local', 'pbkdf2-sha256$100000$bVusF4mbazwCK5wbepKxdw==$Byq6JPsniS241XLdlLPTaOqXzEru4MlKL9t2W0xzZAE=', 'Contractor', TRUE),
+(4, 'tenant@property.local', 'pbkdf2-sha256$100000$fC2Q50LcNox7BLeNrBzsdQ==$OoMPdU5voLOu6CJZ/lp/0eqft0bdHcsV+oqiWYhfISA=', 'Tenant', TRUE);
+
 INSERT INTO Properties (PropertyName, AddressLine1, UnitNumber, MonthlyRent, OccupancyStatus) VALUES
 ('Sunrise Apts', '123 Maple St', '1A', 1200.00, 'occupied'),
 ('Sunrise Apts', '123 Maple St', '1B', 1250.00, 'occupied'),
@@ -12,17 +18,17 @@ INSERT INTO Properties (PropertyName, AddressLine1, UnitNumber, MonthlyRent, Occ
 ('Pine Ridge', '555 Pine Ln', '5', 900.00, 'occupied'),
 ('Pine Ridge', '555 Pine Ln', '6', 950.00, 'occupied');
 
-INSERT INTO Tenants (FirstName, LastName, Email, PhoneNumber, PropertyId, TenantStatus) VALUES
-('John', 'Doe', 'john@example.com', '555-0101', 1, 'active'),
-('Jane', 'Smith', 'jane@example.com', '555-0102', 2, 'past_due'),
-('Mike', 'Jones', 'mike@example.com', '555-0103', 3, 'past_due'),
-('Sarah', 'Wilson', 'sarah@example.com', '555-0104', 4, 'active'),
-('Alex', 'Brown', 'alex@example.com', '555-0105', 5, 'active'),
-('Chris', 'Davis', 'chris@example.com', '555-0106', 6, 'past_due'),
-('Pat', 'Taylor', 'pat@example.com', '555-0107', 7, 'active'),
-('Sam', 'Moore', 'sam@example.com', '555-0108', 8, 'past_due'),
-('Kelly', 'White', 'kelly@example.com', '555-0109', 9, 'active'),
-('Drew', 'Harris', 'drew@example.com', '555-0110', 10, 'past_due');
+INSERT INTO Tenants (AuthUserId, FirstName, LastName, Email, PhoneNumber, PropertyId, TenantStatus) VALUES
+(4, 'John', 'Doe', 'tenant@property.local', '555-0101', 1, 'active'),
+(NULL, 'Jane', 'Smith', 'jane@example.com', '555-0102', 2, 'past_due'),
+(NULL, 'Mike', 'Jones', 'mike@example.com', '555-0103', 3, 'past_due'),
+(NULL, 'Sarah', 'Wilson', 'sarah@example.com', '555-0104', 4, 'active'),
+(NULL, 'Alex', 'Brown', 'alex@example.com', '555-0105', 5, 'active'),
+(NULL, 'Chris', 'Davis', 'chris@example.com', '555-0106', 6, 'past_due'),
+(NULL, 'Pat', 'Taylor', 'pat@example.com', '555-0107', 7, 'active'),
+(NULL, 'Sam', 'Moore', 'sam@example.com', '555-0108', 8, 'past_due'),
+(NULL, 'Kelly', 'White', 'kelly@example.com', '555-0109', 9, 'active'),
+(NULL, 'Drew', 'Harris', 'drew@example.com', '555-0110', 10, 'past_due');
 
 INSERT INTO RentSchedules (TenantId, DueDate, ScheduleStatus, BaseRent, LateFeeAmount, BalanceDue, ReminderCount) VALUES
 (1, '2026-02-01', 'Paid', 1200.00, 0.00, 0.00, 0),

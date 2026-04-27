@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Auth;
 using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Services;
@@ -16,6 +17,7 @@ public class TenantsController : ControllerBase
         _tenantService = tenantService;
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -23,6 +25,7 @@ public class TenantsController : ControllerBase
         return Ok(tenants);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet("{tenantId:int}")]
     public async Task<IActionResult> GetById(int tenantId, CancellationToken cancellationToken)
     {
@@ -36,6 +39,31 @@ public class TenantsController : ControllerBase
         return Ok(tenant);
     }
 
+    [AuthorizeRoles(UserRoles.Tenant)]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMyTenant(CancellationToken cancellationToken)
+    {
+        var authUserId = User.GetRequiredAuthUserId();
+        var tenant = await _tenantService.GetByAuthUserIdAsync(
+            authUserId,
+            User.GetEmailAddress(),
+            cancellationToken);
+
+        if (tenant is null)
+        {
+            return Forbid();
+        }
+
+        var claimedTenantId = User.GetTenantId();
+        if (claimedTenantId.HasValue && claimedTenantId.Value != tenant.TenantId)
+        {
+            return Forbid();
+        }
+
+        return Ok(tenant);
+    }
+
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateTenantRequest request,
@@ -45,6 +73,7 @@ public class TenantsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { tenantId = createdTenant.TenantId }, createdTenant);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpPut("{tenantId:int}")]
     public async Task<IActionResult> Update(
         int tenantId,
@@ -61,6 +90,7 @@ public class TenantsController : ControllerBase
         return Ok(updatedTenant);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpDelete("{tenantId:int}")]
     public async Task<IActionResult> Delete(int tenantId, CancellationToken cancellationToken)
     {

@@ -17,42 +17,21 @@ public sealed class RentCollectionDataService : IRentCollectionDataService
 
     public async Task<IReadOnlyCollection<RentScheduleResponse>> GetSchedulesAsync(CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT
-                rs.ScheduleId,
-                rs.TenantId,
-                CONCAT(t.FirstName, ' ', t.LastName) AS TenantName,
-                p.PropertyName,
-                p.AddressLine1,
-                p.UnitNumber,
-                rs.DueDate,
-                rs.ScheduleStatus,
-                rs.BaseRent,
-                rs.LateFeeAmount,
-                rs.BalanceDue,
-                rs.ReminderCount,
-                rs.CreatedAt,
-                rs.UpdatedAt
-            FROM RentSchedules rs
-            INNER JOIN Tenants t ON t.TenantId = rs.TenantId
-            INNER JOIN Properties p ON p.PropertyId = t.PropertyId
+        const string sql = RentScheduleSelectSql + """
             ORDER BY rs.DueDate DESC, rs.ScheduleId ASC;
             """;
 
-        var schedules = new List<RentScheduleResponse>();
+        return await QuerySchedulesAsync(sql, null, cancellationToken);
+    }
 
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<RentScheduleResponse>> GetSchedulesForTenantAsync(int tenantId, CancellationToken cancellationToken)
+    {
+        const string sql = RentScheduleSelectSql + """
+            WHERE rs.TenantId = @TenantId
+            ORDER BY rs.DueDate DESC, rs.ScheduleId ASC;
+            """;
 
-        await using var command = new MySqlCommand(sql, connection);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            schedules.Add(MapSchedule(reader));
-        }
-
-        return schedules;
+        return await QuerySchedulesAsync(sql, command => command.Parameters.AddWithValue("@TenantId", tenantId), cancellationToken);
     }
 
     public async Task<RentScheduleResponse?> UpdateScheduleAsync(
@@ -92,35 +71,21 @@ public sealed class RentCollectionDataService : IRentCollectionDataService
 
     public async Task<IReadOnlyCollection<RentPaymentResponse>> GetPaymentsAsync(CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT
-                rp.PaymentId,
-                rp.ScheduleId,
-                CONCAT(t.FirstName, ' ', t.LastName) AS TenantName,
-                rp.AmountPaid,
-                rp.PaymentMethod,
-                rp.PaymentDate,
-                rp.ReferenceNumber
-            FROM RentPayments rp
-            INNER JOIN RentSchedules rs ON rs.ScheduleId = rp.ScheduleId
-            INNER JOIN Tenants t ON t.TenantId = rs.TenantId
+        const string sql = RentPaymentSelectSql + """
             ORDER BY rp.PaymentDate DESC, rp.PaymentId DESC;
             """;
 
-        var payments = new List<RentPaymentResponse>();
+        return await QueryPaymentsAsync(sql, null, cancellationToken);
+    }
 
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<RentPaymentResponse>> GetPaymentsForTenantAsync(int tenantId, CancellationToken cancellationToken)
+    {
+        const string sql = RentPaymentSelectSql + """
+            WHERE rs.TenantId = @TenantId
+            ORDER BY rp.PaymentDate DESC, rp.PaymentId DESC;
+            """;
 
-        await using var command = new MySqlCommand(sql, connection);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            payments.Add(MapPayment(reader));
-        }
-
-        return payments;
+        return await QueryPaymentsAsync(sql, command => command.Parameters.AddWithValue("@TenantId", tenantId), cancellationToken);
     }
 
     public async Task<RentPaymentResponse> CreatePaymentAsync(
@@ -190,25 +155,7 @@ public sealed class RentCollectionDataService : IRentCollectionDataService
 
     private async Task<RentScheduleResponse?> GetScheduleByIdAsync(int scheduleId, CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT
-                rs.ScheduleId,
-                rs.TenantId,
-                CONCAT(t.FirstName, ' ', t.LastName) AS TenantName,
-                p.PropertyName,
-                p.AddressLine1,
-                p.UnitNumber,
-                rs.DueDate,
-                rs.ScheduleStatus,
-                rs.BaseRent,
-                rs.LateFeeAmount,
-                rs.BalanceDue,
-                rs.ReminderCount,
-                rs.CreatedAt,
-                rs.UpdatedAt
-            FROM RentSchedules rs
-            INNER JOIN Tenants t ON t.TenantId = rs.TenantId
-            INNER JOIN Properties p ON p.PropertyId = t.PropertyId
+        const string sql = RentScheduleSelectSql + """
             WHERE rs.ScheduleId = @ScheduleId;
             """;
 
@@ -229,18 +176,7 @@ public sealed class RentCollectionDataService : IRentCollectionDataService
 
     private async Task<RentPaymentResponse?> GetLatestPaymentForScheduleAsync(int scheduleId, CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT
-                rp.PaymentId,
-                rp.ScheduleId,
-                CONCAT(t.FirstName, ' ', t.LastName) AS TenantName,
-                rp.AmountPaid,
-                rp.PaymentMethod,
-                rp.PaymentDate,
-                rp.ReferenceNumber
-            FROM RentPayments rp
-            INNER JOIN RentSchedules rs ON rs.ScheduleId = rp.ScheduleId
-            INNER JOIN Tenants t ON t.TenantId = rs.TenantId
+        const string sql = RentPaymentSelectSql + """
             WHERE rp.ScheduleId = @ScheduleId
             ORDER BY rp.PaymentId DESC
             LIMIT 1;
@@ -259,6 +195,50 @@ public sealed class RentCollectionDataService : IRentCollectionDataService
         }
 
         return null;
+    }
+
+    private async Task<IReadOnlyCollection<RentScheduleResponse>> QuerySchedulesAsync(
+        string sql,
+        Action<MySqlCommand>? configureCommand,
+        CancellationToken cancellationToken)
+    {
+        var schedules = new List<RentScheduleResponse>();
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new MySqlCommand(sql, connection);
+        configureCommand?.Invoke(command);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            schedules.Add(MapSchedule(reader));
+        }
+
+        return schedules;
+    }
+
+    private async Task<IReadOnlyCollection<RentPaymentResponse>> QueryPaymentsAsync(
+        string sql,
+        Action<MySqlCommand>? configureCommand,
+        CancellationToken cancellationToken)
+    {
+        var payments = new List<RentPaymentResponse>();
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new MySqlCommand(sql, connection);
+        configureCommand?.Invoke(command);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            payments.Add(MapPayment(reader));
+        }
+
+        return payments;
     }
 
     private static RentScheduleResponse MapSchedule(MySqlDataReader reader)
@@ -299,4 +279,41 @@ public sealed class RentCollectionDataService : IRentCollectionDataService
             ReferenceNumber = reader.IsDBNull(referenceNumberOrdinal) ? null : reader.GetString("ReferenceNumber")
         };
     }
+
+    private const string RentScheduleSelectSql = """
+        SELECT
+            rs.ScheduleId,
+            rs.TenantId,
+            CONCAT(t.FirstName, ' ', t.LastName) AS TenantName,
+            p.PropertyName,
+            p.AddressLine1,
+            p.UnitNumber,
+            rs.DueDate,
+            rs.ScheduleStatus,
+            rs.BaseRent,
+            rs.LateFeeAmount,
+            rs.BalanceDue,
+            rs.ReminderCount,
+            rs.CreatedAt,
+            rs.UpdatedAt
+        FROM RentSchedules rs
+        INNER JOIN Tenants t ON t.TenantId = rs.TenantId
+        INNER JOIN Properties p ON p.PropertyId = t.PropertyId
+        
+        """;
+
+    private const string RentPaymentSelectSql = """
+        SELECT
+            rp.PaymentId,
+            rp.ScheduleId,
+            CONCAT(t.FirstName, ' ', t.LastName) AS TenantName,
+            rp.AmountPaid,
+            rp.PaymentMethod,
+            rp.PaymentDate,
+            rp.ReferenceNumber
+        FROM RentPayments rp
+        INNER JOIN RentSchedules rs ON rs.ScheduleId = rp.ScheduleId
+        INNER JOIN Tenants t ON t.TenantId = rs.TenantId
+        
+        """;
 }

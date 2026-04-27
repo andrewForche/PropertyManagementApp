@@ -18,9 +18,19 @@ public sealed class RentCollectionService : IRentCollectionService
         return _rentCollectionDataService.GetSchedulesAsync(cancellationToken);
     }
 
+    public Task<IReadOnlyCollection<RentScheduleResponse>> GetSchedulesForTenantAsync(int tenantId, CancellationToken cancellationToken)
+    {
+        return _rentCollectionDataService.GetSchedulesForTenantAsync(tenantId, cancellationToken);
+    }
+
     public Task<IReadOnlyCollection<RentPaymentResponse>> GetPaymentsAsync(CancellationToken cancellationToken)
     {
         return _rentCollectionDataService.GetPaymentsAsync(cancellationToken);
+    }
+
+    public Task<IReadOnlyCollection<RentPaymentResponse>> GetPaymentsForTenantAsync(int tenantId, CancellationToken cancellationToken)
+    {
+        return _rentCollectionDataService.GetPaymentsForTenantAsync(tenantId, cancellationToken);
     }
 
     public Task<RentScheduleResponse?> UpdateScheduleAsync(

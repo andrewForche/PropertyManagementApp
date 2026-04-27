@@ -11,10 +11,23 @@ DROP TABLE IF EXISTS WorkLogs;
 DROP TABLE IF EXISTS Invoices;
 DROP TABLE IF EXISTS RentSchedules;
 DROP TABLE IF EXISTS Tenants;
+DROP TABLE IF EXISTS AuthUsers;
 DROP TABLE IF EXISTS MaintenanceProjects;
 DROP TABLE IF EXISTS Properties;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE AuthUsers (
+    AuthUserId INT NOT NULL AUTO_INCREMENT,
+    Email VARCHAR(200) NOT NULL,
+    PasswordHash VARCHAR(500) NOT NULL,
+    RoleName ENUM('Admin', 'Contractor', 'Landlord', 'Tenant') NOT NULL,
+    IsActive BOOLEAN NOT NULL DEFAULT TRUE,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (AuthUserId),
+    CONSTRAINT UX_AuthUsers_Email UNIQUE (Email)
+);
 
 CREATE TABLE Properties (
     PropertyId INT NOT NULL AUTO_INCREMENT,
@@ -30,6 +43,7 @@ CREATE TABLE Properties (
 
 CREATE TABLE Tenants (
     TenantId INT NOT NULL AUTO_INCREMENT,
+    AuthUserId INT NULL,
     FirstName VARCHAR(100) NOT NULL,
     LastName VARCHAR(100) NOT NULL,
     Email VARCHAR(200) NOT NULL,
@@ -41,6 +55,10 @@ CREATE TABLE Tenants (
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (TenantId),
+    CONSTRAINT FK_Tenants_AuthUsers
+        FOREIGN KEY (AuthUserId) REFERENCES AuthUsers (AuthUserId)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
     CONSTRAINT FK_Tenants_Properties
         FOREIGN KEY (PropertyId) REFERENCES Properties (PropertyId)
         ON DELETE RESTRICT
@@ -131,6 +149,7 @@ CREATE TABLE Invoices (
 );
 
 CREATE INDEX IX_Tenants_PropertyId ON Tenants (PropertyId);
+CREATE UNIQUE INDEX IX_Tenants_AuthUserId ON Tenants (AuthUserId);
 CREATE INDEX IX_RentSchedules_TenantId ON RentSchedules (TenantId);
 CREATE INDEX IX_RentSchedules_DueDate ON RentSchedules (DueDate);
 CREATE INDEX IX_RentPayments_ScheduleId ON RentPayments (ScheduleId);

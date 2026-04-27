@@ -7,6 +7,7 @@ public interface ITenantService
 {
     Task<IReadOnlyCollection<TenantResponse>> GetAllAsync(CancellationToken cancellationToken);
     Task<TenantResponse?> GetByIdAsync(int tenantId, CancellationToken cancellationToken);
+    Task<TenantResponse?> GetByAuthUserIdAsync(int authUserId, string? email, CancellationToken cancellationToken);
     Task<TenantResponse> CreateAsync(CreateTenantRequest request, CancellationToken cancellationToken);
     Task<TenantResponse?> UpdateAsync(int tenantId, UpdateTenantRequest request, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(int tenantId, CancellationToken cancellationToken);

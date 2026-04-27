@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { ComponentType, MouseEvent } from 'react'
+import { useAuth } from '../core/auth/AuthContext'
 import { FEATURE_ROUTES } from '../shared/constants/navigation'
+import { ProtectedRoute } from '../shared/auth/ProtectedRoute'
 import { DashboardSummaryPage } from '../features/dashboard/DashboardSummaryPage'
 import { RentCollectionPage } from '../features/rent-collection/RentCollectionPage'
 import { RentRecordsPage } from '../features/rent-records/RentRecordsPage'
@@ -9,8 +11,12 @@ import { WorkLogsPage } from '../features/work-logs/WorkLogsPage'
 import { InvoicesPage } from '../features/invoices/InvoicesPage'
 import { PropertiesPage } from '../features/properties/PropertiesPage'
 import { TenantsPage } from '../features/tenants/TenantsPage'
+import { LoginPage } from '../features/auth/LoginPage'
+import { TenantDashboardPage } from '../features/tenant-dashboard/TenantDashboardPage'
 
 const routeComponents: Record<string, ComponentType & { displayName?: string }> = {
+  '/login': LoginPage,
+  '/tenant-dashboard': TenantDashboardPage,
   '/': DashboardSummaryPage,
   '/rent-collection': RentCollectionPage,
   '/rent-records': RentRecordsPage,
@@ -22,6 +28,7 @@ const routeComponents: Record<string, ComponentType & { displayName?: string }> 
 }
 
 export function AppShell() {
+  const { clearToken, isAuthenticated, primaryRole } = useAuth()
   const [currentPath, setCurrentPath] = useState(() =>
     normalizePath(window.location.pathname),
   )
@@ -36,9 +43,49 @@ export function AppShell() {
   }, [])
 
   const activePath = currentPath in routeComponents ? currentPath : '/'
-  const ActivePage = routeComponents[activePath]
+  const isLoginRoute = activePath === '/login'
+  const accessibleRoutes = FEATURE_ROUTES.filter((route) =>
+    primaryRole ? route.allowedRoles.includes(primaryRole) : false,
+  )
+  const fallbackRoute = accessibleRoutes[0] ?? FEATURE_ROUTES[0]
   const activeRoute =
-    FEATURE_ROUTES.find((route) => route.path === activePath) ?? FEATURE_ROUTES[0]
+    FEATURE_ROUTES.find((route) => route.path === activePath) ?? fallbackRoute
+  const ActivePage = routeComponents[isLoginRoute ? '/login' : activeRoute.path]
+  const isAllowedRoute = accessibleRoutes.some((route) => route.path === activePath)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (!isLoginRoute) {
+        navigateTo('/login', true)
+      }
+      return
+    }
+
+    if (isLoginRoute) {
+      navigateTo(fallbackRoute.path, true)
+      return
+    }
+
+    if (accessibleRoutes.length === 0) {
+      return
+    }
+
+    if (!accessibleRoutes.some((route) => route.path === activePath)) {
+      navigateTo(fallbackRoute.path, true)
+    }
+  }, [activePath, accessibleRoutes, fallbackRoute.path, isAuthenticated, isLoginRoute])
+
+  function navigateTo(path: string, replace = false) {
+    const nextPath = normalizePath(path)
+
+    if (replace) {
+      window.history.replaceState({}, '', nextPath)
+    } else {
+      window.history.pushState({}, '', nextPath)
+    }
+
+    setCurrentPath(nextPath)
+  }
 
   function handleNavigate(path: string, event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault()
@@ -47,8 +94,28 @@ export function AppShell() {
       return
     }
 
-    window.history.pushState({}, '', path)
-    setCurrentPath(path)
+    navigateTo(path)
+  }
+
+  function handleSignOut() {
+    clearToken()
+    navigateTo('/login', true)
+  }
+
+  if (!isAuthenticated && !isLoginRoute) {
+    return null
+  }
+
+  if (isAuthenticated && isLoginRoute) {
+    return null
+  }
+
+  if (isAuthenticated && accessibleRoutes.length > 0 && !isAllowedRoute) {
+    return null
+  }
+
+  if (isLoginRoute) {
+    return <LoginPage />
   }
 
   return (
@@ -57,11 +124,16 @@ export function AppShell() {
         <div className="brand-block">
           <p className="eyebrow">Property Management App</p>
           <h1>Operations workspace</h1>
+          <p className="panel-caption">
+            {isAuthenticated
+              ? `Signed in as ${primaryRole ?? 'Unknown role'}`
+              : 'Waiting for a valid JWT session'}
+          </p>
         </div>
 
         <nav aria-label="Primary">
           <ul className="nav-list">
-            {FEATURE_ROUTES.map((route) => (
+            {accessibleRoutes.map((route) => (
               <li key={route.path}>
                 <a
                   href={route.path}
@@ -75,6 +147,12 @@ export function AppShell() {
             ))}
           </ul>
         </nav>
+
+        {isAuthenticated ? (
+          <button type="button" className="secondary-button" onClick={handleSignOut}>
+            Sign Out
+          </button>
+        ) : null}
       </aside>
 
       <main className="content">
@@ -86,7 +164,9 @@ export function AppShell() {
         </section>
 
         <section className="page-stage" aria-label={`${activeRoute.label} page`}>
-          <ActivePage />
+          <ProtectedRoute allowedRoles={activeRoute.allowedRoles}>
+            <ActivePage />
+          </ProtectedRoute>
         </section>
       </main>
     </div>

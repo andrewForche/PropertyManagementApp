@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Auth;
 using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Services;
@@ -16,6 +17,7 @@ public class PropertiesController : ControllerBase
         _propertyService = propertyService;
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -23,6 +25,7 @@ public class PropertiesController : ControllerBase
         return Ok(properties);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpGet("{propertyId:int}")]
     public async Task<IActionResult> GetById(int propertyId, CancellationToken cancellationToken)
     {
@@ -36,6 +39,38 @@ public class PropertiesController : ControllerBase
         return Ok(property);
     }
 
+    [AuthorizeRoles(UserRoles.Tenant)]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe(
+        [FromServices] ITenantService tenantService,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await tenantService.GetByAuthUserIdAsync(
+            User.GetRequiredAuthUserId(),
+            User.GetEmailAddress(),
+            cancellationToken);
+
+        if (tenant is null)
+        {
+            return Forbid();
+        }
+
+        var claimedTenantId = User.GetTenantId();
+        if (claimedTenantId.HasValue && claimedTenantId.Value != tenant.TenantId)
+        {
+            return Forbid();
+        }
+
+        var property = await _propertyService.GetByIdAsync(tenant.PropertyId, cancellationToken);
+        if (property is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(property);
+    }
+
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreatePropertyRequest request,
@@ -45,6 +80,7 @@ public class PropertiesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { propertyId = createdProperty.PropertyId }, createdProperty);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpPut("{propertyId:int}")]
     public async Task<IActionResult> Update(
         int propertyId,
@@ -61,6 +97,7 @@ public class PropertiesController : ControllerBase
         return Ok(updatedProperty);
     }
 
+    [AuthorizeRoles(UserRoles.Admin)]
     [HttpDelete("{propertyId:int}")]
     public async Task<IActionResult> Delete(int propertyId, CancellationToken cancellationToken)
     {

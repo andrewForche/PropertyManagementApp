@@ -6,8 +6,10 @@ namespace Property_Management_Api.DataServices;
 public interface IRentCollectionDataService
 {
     Task<IReadOnlyCollection<RentScheduleResponse>> GetSchedulesAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<RentScheduleResponse>> GetSchedulesForTenantAsync(int tenantId, CancellationToken cancellationToken);
     Task<RentScheduleResponse?> UpdateScheduleAsync(int scheduleId, UpdateRentScheduleRequest request, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<RentPaymentResponse>> GetPaymentsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<RentPaymentResponse>> GetPaymentsForTenantAsync(int tenantId, CancellationToken cancellationToken);
     Task<RentPaymentResponse> CreatePaymentAsync(CreateRentPaymentRequest request, CancellationToken cancellationToken);
     Task RefreshScheduleBalanceAsync(int scheduleId, CancellationToken cancellationToken);
 }

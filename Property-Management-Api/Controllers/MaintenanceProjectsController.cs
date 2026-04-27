@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Property_Management_Api.Auth;
 using Property_Management_Api.Exceptions;
 using Property_Management_Api.Models.Request;
 using Property_Management_Api.Services;
@@ -16,6 +17,7 @@ public class MaintenanceProjectsController : ControllerBase
         _maintenanceService = maintenanceService;
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord, UserRoles.Contractor)]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -23,6 +25,7 @@ public class MaintenanceProjectsController : ControllerBase
         return Ok(projects);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord, UserRoles.Contractor)]
     [HttpGet("{projectId:int}")]
     public async Task<IActionResult> GetById(int projectId, CancellationToken cancellationToken)
     {
@@ -36,6 +39,7 @@ public class MaintenanceProjectsController : ControllerBase
         return Ok(project);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateMaintenanceProjectRequest request,
@@ -45,6 +49,7 @@ public class MaintenanceProjectsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { projectId = createdProject.ProjectId }, createdProject);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpPut("{projectId:int}")]
     public async Task<IActionResult> Update(
         int projectId,
@@ -61,6 +66,7 @@ public class MaintenanceProjectsController : ControllerBase
         return Ok(updatedProject);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord)]
     [HttpDelete("{projectId:int}")]
     public async Task<IActionResult> Delete(int projectId, CancellationToken cancellationToken)
     {
@@ -81,6 +87,7 @@ public class MaintenanceProjectsController : ControllerBase
         }
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Landlord, UserRoles.Contractor)]
     [HttpGet("{projectId:int}/work-logs")]
     public async Task<IActionResult> GetWorkLogs(int projectId, CancellationToken cancellationToken)
     {
@@ -88,6 +95,7 @@ public class MaintenanceProjectsController : ControllerBase
         return Ok(workLogs);
     }
 
+    [AuthorizeRoles(UserRoles.Admin, UserRoles.Contractor)]
     [HttpPost("{projectId:int}/work-logs")]
     public async Task<IActionResult> CreateWorkLog(
         int projectId,

@@ -10,6 +10,7 @@ import { propertyService } from '../../core/services/properties/property.service
 import { tenantService } from '../../core/services/tenants/tenant.service'
 import { AppModal } from '../../shared/ui/AppModal'
 import { ConfirmationModal } from '../../shared/ui/ConfirmationModal'
+import { RoleWrapper } from '../../shared/auth/RoleWrapper'
 import { CollapseToggleButton } from '../../shared/ui/CollapseToggleButton'
 import { useToast } from '../../shared/ui/ToastProvider'
 
@@ -208,14 +209,16 @@ export function TenantsPage() {
           <div className="property-list-header" onClick={(event) => event.stopPropagation()}>
             <h4>Tenant Records</h4>
             <div className="dashboard-actions">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={openCreateModal}
-                disabled={properties.length === 0}
-              >
-                Add Tenant
-              </button>
+              <RoleWrapper allowedRoles={['Admin']}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={openCreateModal}
+                  disabled={properties.length === 0}
+                >
+                  Add Tenant
+                </button>
+              </RoleWrapper>
               <CollapseToggleButton
                 isExpanded={isRecordsExpanded}
                 onClick={() => setIsRecordsExpanded((current) => !current)}
@@ -284,20 +287,24 @@ export function TenantsPage() {
                     </dl>
 
                     <div className="property-card-actions">
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => handleEdit(tenant)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="danger-button"
-                        onClick={() => openDeleteConfirmation(tenant.tenantId)}
-                      >
-                        Delete
-                      </button>
+                      <RoleWrapper allowedRoles={['Admin']}>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => handleEdit(tenant)}
+                        >
+                          Edit
+                        </button>
+                      </RoleWrapper>
+                      <RoleWrapper allowedRoles={['Admin']}>
+                        <button
+                          type="button"
+                          className="danger-button"
+                          onClick={() => openDeleteConfirmation(tenant.tenantId)}
+                        >
+                          Delete
+                        </button>
+                      </RoleWrapper>
                     </div>
                   </article>
                 ))}
