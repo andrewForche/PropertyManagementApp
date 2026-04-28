@@ -24,3 +24,5 @@ Property-Management-Web/*.local
 # Shared committed templates
 !Property-Management-Web/.env.example
 !Property-Management-Api/appsettings.Development.example.json
+
+/node_modules

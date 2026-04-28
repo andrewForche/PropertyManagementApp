@@ -62,4 +62,10 @@ export const FEATURE_ROUTES: FeatureRoute[] = [
     description: 'Manage tenant profiles, lease dates, and property assignments.',
     allowedRoles: ['Admin', 'Landlord'],
   },
+  {
+    label: 'Shared Documents',
+    path: '/shared-documents',
+    description: 'Upload and share important documents with tenants and landlords.',
+    allowedRoles: ['Admin', 'Landlord', 'Tenant'],
+  },
 ]
