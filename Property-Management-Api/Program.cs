@@ -191,6 +191,10 @@ builder.Services.AddScoped<IMaintenanceDataService, MaintenanceDataService>();
 builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IRentCollectionDataService, RentCollectionDataService>();
 builder.Services.AddScoped<IRentCollectionService, RentCollectionService>();
+builder.Services.AddScoped<ISharedDocumentDataService, SharedDocumentDataService>();
+
+builder.Services.Configure<FileStorageOptions>(
+    builder.Configuration.GetSection("FileStorage"));
 
 var app = builder.Build();
 

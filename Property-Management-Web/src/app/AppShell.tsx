@@ -13,10 +13,12 @@ import { PropertiesPage } from '../features/properties/PropertiesPage'
 import { TenantsPage } from '../features/tenants/TenantsPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { TenantDashboardPage } from '../features/tenant-dashboard/TenantDashboardPage'
+import { SharedDocumentsPage } from '../features/shared-documents/SharedDocumentsPage'
 
 const routeComponents: Record<string, ComponentType & { displayName?: string }> = {
   '/login': LoginPage,
   '/tenant-dashboard': TenantDashboardPage,
+  '/shared-documents': SharedDocumentsPage,
   '/': DashboardSummaryPage,
   '/rent-collection': RentCollectionPage,
   '/rent-records': RentRecordsPage,
@@ -47,6 +49,11 @@ export function AppShell() {
   const accessibleRoutes = FEATURE_ROUTES.filter((route) =>
     primaryRole ? route.allowedRoles.includes(primaryRole) : false,
   )
+
+
+  console.log('primaryRole:', primaryRole)
+  console.log('accessibleRoutes:', accessibleRoutes.map(r => r.path))
+  
   const fallbackRoute = accessibleRoutes[0] ?? FEATURE_ROUTES[0]
   const activeRoute =
     FEATURE_ROUTES.find((route) => route.path === activePath) ?? fallbackRoute

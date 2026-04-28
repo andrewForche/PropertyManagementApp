@@ -11,6 +11,7 @@ interface AuthContextValue {
   token: string | null
   roles: UserRole[]
   primaryRole: UserRole | null
+  tenantId: number | null  // ✅ add this
   setToken: (token: string) => void
   clearToken: () => void
   hasAnyRole: (allowedRoles: readonly UserRole[]) => boolean
@@ -43,18 +44,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   return (
     <AuthContext.Provider
-      value={{
-        session,
-        isAuthenticated,
-        token: session?.token ?? null,
-        roles,
-        primaryRole,
-        setToken,
-        clearToken,
-        hasAnyRole: (allowedRoles) =>
-          allowedRoles.length === 0 || allowedRoles.some((role) => roles.includes(role)),
-      }}
-    >
+    value={{
+      session,
+      isAuthenticated,
+      token: session?.token ?? null,
+      roles,
+      primaryRole,
+      tenantId: session?.tenantId ?? null,
+      setToken,
+      clearToken,
+      hasAnyRole: (allowedRoles) =>
+        allowedRoles.length === 0 || allowedRoles.some((role) => roles.includes(role)),
+    }}
+  >
       {children}
     </AuthContext.Provider>
   )

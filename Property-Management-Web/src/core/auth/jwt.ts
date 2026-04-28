@@ -12,6 +12,7 @@ export interface AuthSession {
   expiresAt: number | null
   isExpired: boolean
   subject: string | null
+  tenantId: number | null
 }
 
 export function parseAuthSession(token: string | null): AuthSession | null {
@@ -23,7 +24,7 @@ export function parseAuthSession(token: string | null): AuthSession | null {
   if (!payload) {
     return null
   }
-
+  
   const roles = getRolesFromPayload(payload)
   const expiresAt = typeof payload.exp === 'number' ? payload.exp * 1000 : null
 
@@ -33,8 +34,8 @@ export function parseAuthSession(token: string | null): AuthSession | null {
     expiresAt,
     isExpired: expiresAt !== null && expiresAt <= Date.now(),
     subject: getStringClaim(payload.sub) ?? getStringClaim(payload.nameid) ?? null,
+    tenantId: parseTenantId(payload['tenant_id'] ?? payload['tenantId']),
   }
-}
 
 function parseTokenPayload(token: string) {
   const parts = token.split('.')
@@ -75,4 +76,14 @@ function getRolesFromPayload(payload: Record<string, unknown>) {
 
 function getStringClaim(value: unknown) {
   return typeof value === 'string' && value.length > 0 ? value : null
+}
+
+function parseTenantId(value: unknown): number | null {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string' && value.length > 0) {
+    const parsed = parseInt(value, 10)
+    return isNaN(parsed) ? null : parsed
+  }
+  return null
+}
 }
